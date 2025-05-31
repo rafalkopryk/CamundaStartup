@@ -28,10 +28,8 @@ builder.AddProject<Projects.MyApp>("myapp")
 builder.Build().Run();
 ```
 
-To use the elastic persistance and Operate, you can also add the following methods:
+To use the elastic persistence and Operate, you can also add the following methods:var builder = DistributedApplication.CreateBuilder(args);
 ```csharp
-var builder = DistributedApplication.CreateBuilder(args);
-
 var elastic = builder.AddElasticsearch("elastic")
     .WithEnvironment("xpack.security.enabled", "false")
     .WithDataVolume("elastic")

@@ -14,22 +14,22 @@ public class CamundaBuilder(IServiceCollection services) : ICamundaBuilder
     public ICamundaBuilder AddWorker<T>(JobWorkerConfiguration jobWorkerConfiguration) where T : class, IJobHandler
     {
         var attribute = typeof(T).GetAttribute<JobWorkerAttribute>();
-        AddWorker<T>(attribute.Type, jobWorkerConfiguration, attribute.FetchVariabeles);
+        AddWorker<T>(attribute.Type, jobWorkerConfiguration, attribute.FetchVariables);
         return this;
     }
 
-    public ICamundaBuilder AddWorker<T>(string type, JobWorkerConfiguration jobWorkerConfiguration, string[]? fetchVariabeles  = null) where T : class, IJobHandler
+    public ICamundaBuilder AddWorker<T>(string type, JobWorkerConfiguration jobWorkerConfiguration, string[]? fetchVariables  = null) where T : class, IJobHandler
     {
         _services.AddScoped(typeof(T));
 
         var internalJobWorkerConfiguration = new InternalJobWorkerConfiguration
         {
             Type = type,
-            FetchVariabeles = fetchVariabeles ?? [],
+            FetchVariables = fetchVariables ?? [],
             AutoComplete = jobWorkerConfiguration.AutoComplete,
-            PoolingDelayInMs = jobWorkerConfiguration.PoolingDelayInMs,
-            PoolingMaxJobsToActivate = jobWorkerConfiguration.PoolingMaxJobsToActivate,
-            PoolingRequestTimeoutInMs = jobWorkerConfiguration.PoolingRequestTimeoutInMs,
+            PollingDelayInMs = jobWorkerConfiguration.PollingDelayInMs,
+            PollingMaxJobsToActivate = jobWorkerConfiguration.PollingMaxJobsToActivate,
+            PollingRequestTimeoutInMs = jobWorkerConfiguration.PollingRequestTimeoutInMs,
             RetryBackOffInMs = jobWorkerConfiguration.RetryBackOffInMs,
             StreamTimeoutInSec = jobWorkerConfiguration.StreamTimeoutInSec,
             TenatIds = jobWorkerConfiguration.TenatIds,

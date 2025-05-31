@@ -26,8 +26,8 @@ internal class RestPoolCamundaWorker<T>(
             Type = jobType,
             Timeout = _jobWorkerConfiguration.TimeoutInMs,
             TenantIds = [.._jobWorkerConfiguration.TenatIds ],
-            MaxJobsToActivate = _jobWorkerConfiguration.PoolingMaxJobsToActivate,
-            RequestTimeout = _jobWorkerConfiguration.PoolingRequestTimeoutInMs,
+            MaxJobsToActivate = _jobWorkerConfiguration.PollingMaxJobsToActivate,
+            RequestTimeout = _jobWorkerConfiguration.PollingRequestTimeoutInMs,
         };
 
         await Task.Yield();
@@ -67,7 +67,7 @@ internal class RestPoolCamundaWorker<T>(
                 activity?.AddException(ex);
             }
 
-            await Task.Delay(TimeSpan.FromMilliseconds(_jobWorkerConfiguration.PoolingDelayInMs), stoppingToken);
+            await Task.Delay(TimeSpan.FromMilliseconds(_jobWorkerConfiguration.PollingDelayInMs), stoppingToken);
         }
     }
 

@@ -41,33 +41,33 @@ Below is an example implementation of a job worker using the attribute configura
     }
 
 ### Configuration Fields
-The JobWorkerAttribute and JobWorkerConfiguration has several fields that can be configured:
+The JobWorkerAttribute and JobWorkerConfiguration have several fields that can be configured:
 
     public string Type { get; init; }
     public long TimeoutInMs { get; init; } = 60_000;
-    public string[] FetchVariabeles { get; init; } = [];
+    public string[] FetchVariables { get; init; } = [];
     public int[] RetryBackOffInMs { get; init; } = [1000];
     public bool AutoComplete { get; init; } = true;
-    public string[] TenatIds { get; init; } = [];
-    public int PoolingMaxJobsToActivate { get; init; } = 20;
-    public long PoolingRequestTimeoutInMs { get; set; } = 20_000;
-    public int PoolingDelayInMs { get; init; } = 100;
+    public string[] TenantIds { get; init; } = [];
+    public int PollingMaxJobsToActivate { get; init; } = 20;
+    public long PollingRequestTimeoutInMs { get; set; } = 20_000;
+    public int PollingDelayInMs { get; init; } = 100;
     public bool UseStream { get; init; }
     public int StreamTimeoutInSec { get; init; } = 900;
 
 Description of Fields
-- Type: the job type. Used as reference to specify which job workers request the respective camunda task.
+- Type: the job type. Used as reference to specify which job workers request the respective Camunda task.
 - TimeoutInMs: a job returned after this call will not be activated by another call until the timeout (in ms) has been reached.
-- FetchVariabeles: a list of variables to fetch as the job variables; if empty, all visible variables at the time of activation for the scope of the job will be returned.
+- FetchVariables: a list of variables to fetch as the job variables; if empty, all visible variables at the time of activation for the scope of the job will be returned.
 - RetryBackOffInMs: Backoff intervals for retries in milliseconds.
 - AutoComplete: Indicates if the job should be auto-completed.
-- TenatIds: Tenant IDs.
-- PoolingMaxJobsToActivate: Maximum jobs to activate in one polling.
-- PoolingRequestTimeoutInMs: Timeout for the polling request in milliseconds.
+- TenantIds: Tenant IDs.
+- PollingMaxJobsToActivate: Maximum jobs to activate in one polling.
+- PollingRequestTimeoutInMs: Timeout for the polling request in milliseconds.
 > The request will be completed when at least one job is activated or after the requestTimeout (in ms). 
 >  - if the requestTimeout = 0, a default timeout is used. 
 >  - if the requestTimeout < 0, long polling is disabled and the request is completed immediately, even when no job is activated.
-- PoolingDelayInMs: Delay between polling attempts in milliseconds.
+- PollingDelayInMs: Delay between polling attempts in milliseconds.
 - UseStream: Indicates if streaming should be used.
 - StreamTimeoutInSec: Timeout for the stream in seconds.
 
@@ -75,12 +75,12 @@ Description of Fields
 > Even with streaming enabled, job workers still poll the cluster for jobs. Due to implementation constraints https://docs.camunda.io/docs/apis-tools/java-client/job-worker/#backfilling.
 
 > [!NOTE]
-> For UseStream = true recomends set pooling fields:
-> - PoolingRequestTimeoutInMs: -1
-> - PoolingDelayInMs: 10_000
+> For UseStream = true, it is recommended to set polling fields:
+> - PollingRequestTimeoutInMs: -1
+> - PollingDelayInMs: 10_000
 
 ### Auto-completing jobs
-By default, the autoComplete attribute is set to true for any job worker.
+By default, the AutoComplete attribute is set to true for any job worker.
 
 In this case, the integration will handle job completion for you:
 
