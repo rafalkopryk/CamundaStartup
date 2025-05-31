@@ -25,7 +25,7 @@ internal class GrpcStreamCamundaWorker<T>(
         {
             Type = jobType,
             Timeout = _jobWorkerConfiguration.TimeoutInMs,
-            TenantIds = { _jobWorkerConfiguration.TenatIds },
+            TenantIds = { _jobWorkerConfiguration.TenantIds },
         };
 
         await Task.Yield();

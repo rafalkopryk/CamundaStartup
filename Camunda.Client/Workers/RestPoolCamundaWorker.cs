@@ -25,7 +25,7 @@ internal class RestPoolCamundaWorker<T>(
         {
             Type = jobType,
             Timeout = _jobWorkerConfiguration.TimeoutInMs,
-            TenantIds = [.._jobWorkerConfiguration.TenatIds ],
+            TenantIds = [.._jobWorkerConfiguration.TenantIds ],
             MaxJobsToActivate = _jobWorkerConfiguration.PollingMaxJobsToActivate,
             RequestTimeout = _jobWorkerConfiguration.PollingRequestTimeoutInMs,
         };

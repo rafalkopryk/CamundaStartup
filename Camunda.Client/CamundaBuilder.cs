@@ -32,7 +32,7 @@ public class CamundaBuilder(IServiceCollection services) : ICamundaBuilder
             PollingRequestTimeoutInMs = jobWorkerConfiguration.PollingRequestTimeoutInMs,
             RetryBackOffInMs = jobWorkerConfiguration.RetryBackOffInMs,
             StreamTimeoutInSec = jobWorkerConfiguration.StreamTimeoutInSec,
-            TenatIds = jobWorkerConfiguration.TenatIds,
+            TenantIds = jobWorkerConfiguration.TenantIds,
             TimeoutInMs = jobWorkerConfiguration.TimeoutInMs,
             UseStream = jobWorkerConfiguration.UseStream,
         };
