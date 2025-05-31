@@ -28,8 +28,10 @@ builder.AddProject<Projects.MyApp>("myapp")
 builder.Build().Run();
 ```
 
-To use the elastic persistence and Operate, you can also add the following methods:var builder = DistributedApplication.CreateBuilder(args);
+To use the elastic persistence and Operate, you can also add the following methods:
 ```csharp
+var builder = DistributedApplication.CreateBuilder(args);
+
 var elastic = builder.AddElasticsearch("elastic")
     .WithEnvironment("xpack.security.enabled", "false")
     .WithDataVolume("elastic")
@@ -51,4 +53,4 @@ builder.AddProject<Projects.MyApp>("myapp")
 
 builder.Build().Run();
 ```
-The nuget package used in the example `Aspire.Hosting.Elasticsearch`
+Integration with Elasticsearch in the example is achieved using the NuGet package `Aspire.Hosting.Elasticsearch`.
