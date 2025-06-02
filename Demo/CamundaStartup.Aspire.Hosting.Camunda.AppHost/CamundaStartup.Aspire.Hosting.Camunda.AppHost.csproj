@@ -16,7 +16,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CamundaStartup.Aspire.Hosting.Camunda\CamundaStartup.Aspire.Hosting.Camunda.csproj" IsAspireProjectResource="false" />
+    <ProjectReference Include="..\Camunda.Startup.DemoApp\Camunda.Startup.DemoApp.csproj" />
+    <ProjectReference Include="..\..\CamundaStartup.Aspire.Hosting.Camunda\CamundaStartup.Aspire.Hosting.Camunda.csproj" IsAspireProjectResource="false" />
   </ItemGroup>
 
 </Project>

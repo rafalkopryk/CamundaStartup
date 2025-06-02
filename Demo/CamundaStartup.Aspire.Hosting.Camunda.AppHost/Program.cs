@@ -17,4 +17,8 @@ var camunda = builder.AddCamunda("camunda", 8080)
     .WithLifetime(ContainerLifetime.Persistent)
     .WaitFor(elastic);
 
+var demoApp = builder.AddProject<Projects.Camunda_Startup_DemoApp>("DemoApp")
+    .WithReference(camunda, "camunda")
+    .WaitFor(camunda);
+
 builder.Build().Run();
