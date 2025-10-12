@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <Sdk Name="Aspire.AppHost.Sdk" Version="9.2.1" />
+  <Sdk Name="Aspire.AppHost.Sdk" Version="9.5.1" />
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -11,8 +11,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.AppHost" Version="9.3.1" />
-    <PackageReference Include="Aspire.Hosting.Elasticsearch" Version="9.2.1-preview.1.25222.1" />
+    <PackageReference Include="Aspire.Hosting.AppHost" Version="9.5.1" />
+    <PackageReference Include="Aspire.Hosting.Elasticsearch" Version="9.5.0" />
   </ItemGroup>
 
   <ItemGroup>

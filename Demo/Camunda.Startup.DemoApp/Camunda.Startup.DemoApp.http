@@ -1,12 +1,12 @@
-@Camunda.Startup.DemoApp_HostAddress = https://localhost:7230
+@DemoApp_HostAddress = https://localhost:7230
 @requestedDate =  2025-10-01
 
 
-POST {{Camunda.Startup.DemoApp_HostAddress}}/weatherforecast/{{requestedDate}}
+POST {{DemoApp_HostAddress}}/weatherforecast/{{requestedDate}}
 Content-Type: application/json
 
 ###
 
-GET {{Camunda.Startup.DemoApp_HostAddress}}/weatherforecast/{{requestedDate}}
+GET {{DemoApp_HostAddress}}/weatherforecast/{{requestedDate}}
 
 ###
