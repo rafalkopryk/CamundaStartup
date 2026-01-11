@@ -3,8 +3,6 @@ using CamundaStartup.Aspire.Hosting.Camunda.AppHost;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-var password = builder.AddParameter("password", true);
-
 var secondaryStorageParameter = builder.AddParameter("secondaryStorage");
 var secondaryStorage = (await secondaryStorageParameter.Resource.GetValueAsync(CancellationToken.None)) switch
 {
@@ -21,7 +19,7 @@ camunda = secondaryStorage switch
 {
     SecondaryStorage.Postgres postgres => camunda.WithRdmbsDatabase(
         postgres.Database.Resource.JdbcConnectionString,
-        postgres.Server.Resource.UserNameParameter,
+        postgres.Server.Resource.UserNameReference,
         postgres.Server.Resource.PasswordParameter),
     SecondaryStorage.SqlServer sqlServer => camunda.WithRdmbsDatabase(
         sqlServer.Database.Resource.JdbcConnectionString,
@@ -41,7 +39,7 @@ builder.Build().Run();
 
 SecondaryStorage AddPostgres()
 {
-    var postgres = builder.AddPostgres("postgres", password)
+    var postgres = builder.AddPostgres("postgres")
         .WithDataVolume("postgres")
         .WithLifetime(ContainerLifetime.Persistent);
     
@@ -52,7 +50,7 @@ SecondaryStorage AddPostgres()
 
 SecondaryStorage AddSqlServer()
 {
-    var sqlServer = builder.AddSqlServer("sqlserver", password)
+    var sqlServer = builder.AddSqlServer("sqlserver")
         .WithDataVolume("sqlserver")
         .WithLifetime(ContainerLifetime.Persistent);
 
@@ -63,7 +61,7 @@ SecondaryStorage AddSqlServer()
 
 SecondaryStorage AddElastic()
 {
-    var elastic = builder.AddElasticsearch("elasticsearch", password)
+    var elastic = builder.AddElasticsearch("elasticsearch")
         .WithEnvironment("xpack.security.enabled", "false")
         .WithDataVolume("elastic")
         .WithLifetime(ContainerLifetime.Persistent);

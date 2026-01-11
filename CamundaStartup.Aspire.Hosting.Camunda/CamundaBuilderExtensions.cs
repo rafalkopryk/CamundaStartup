@@ -48,17 +48,6 @@ public static class CamundaBuilderExtensions
         return builder;
     }
     
-    public static IResourceBuilder<CamundaResource> WithRdmbsDatabase(this IResourceBuilder<CamundaResource> builder, ReferenceExpression? jdbcConnectionString, ParameterResource user, ParameterResource password)
-    {
-        builder.WithEnvironment("CAMUNDA_DATABASE_INDEX_NUMBEROFREPLICAS", "0");
-        builder.WithEnvironment("CAMUNDA_DATA_SECONDARYSTORAGE_TYPE", "rdbms");
-        builder.WithEnvironment("CAMUNDA_DATA_SECONDARYSTORAGE_RDBMS_URL", jdbcConnectionString);
-        builder.WithEnvironment("CAMUNDA_DATA_SECONDARYSTORAGE_RDBMS_USERNAME", user);
-        builder.WithEnvironment("CAMUNDA_DATA_SECONDARYSTORAGE_RDBMS_PASSWORD", password);
-        
-        return builder;
-    } 
-    
     public static IResourceBuilder<CamundaResource> WithRdmbsDatabase(this IResourceBuilder<CamundaResource> builder, ReferenceExpression? jdbcConnectionString, ReferenceExpression user, ParameterResource password)
     {
         builder.WithEnvironment("CAMUNDA_DATABASE_INDEX_NUMBEROFREPLICAS", "0");
@@ -68,13 +57,13 @@ public static class CamundaBuilderExtensions
         builder.WithEnvironment("CAMUNDA_DATA_SECONDARYSTORAGE_RDBMS_PASSWORD", password);
         
         return builder;
-    } 
-   
+    }
     
     public static IResourceBuilder<CamundaResource> WithDataVolume(this IResourceBuilder<CamundaResource> builder, string? name = null, bool isReadOnly = false)
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-        return builder.WithVolume(name, "/usr/local/zeebe/data", isReadOnly);
+        return builder
+            .WithVolume(name, "/usr/local/camunda/data", isReadOnly);
     }
 }
