@@ -3,6 +3,10 @@ using CamundaStartup.Aspire.Hosting.Camunda.AppHost;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
+var minio = builder.AddMinioContainer("minio")
+    .WithDataVolume("minio")
+    .WithLifetime(ContainerLifetime.Persistent);
+
 var secondaryStorageParameter = builder.AddParameter("secondaryStorage");
 var secondaryStorage = (await secondaryStorageParameter.Resource.GetValueAsync(CancellationToken.None)) switch
 {
@@ -29,7 +33,9 @@ camunda = secondaryStorage switch
         .GetConnectionStringExpressionWithoutCredentials())
 };
 
-camunda = camunda.WaitFor(secondaryStorage.Resource);
+camunda = camunda.WaitFor(secondaryStorage.Resource)
+    .WithS3Backup(minio.Resource.UriExpression, minio.Resource.RootUser, minio.Resource.PasswordParameter)
+    .WaitFor(minio);
 
 var demoApp = builder.AddProject<Projects.Camunda_Startup_DemoApp>("DemoApp")
     .WithReference(camunda, "camunda")

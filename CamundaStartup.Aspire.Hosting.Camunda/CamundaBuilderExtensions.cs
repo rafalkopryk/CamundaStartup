@@ -66,4 +66,33 @@ public static class CamundaBuilderExtensions
         return builder
             .WithVolume(name, "/usr/local/camunda/data", isReadOnly);
     }
+    
+    public static IResourceBuilder<CamundaResource> WithS3Backup(
+        this IResourceBuilder<CamundaResource> builder,
+        ReferenceExpression endpoint,
+        ParameterResource accessKey,
+        ParameterResource secretKey,
+        string bucketName = "camunda-backup",
+        string region = "us-east-1",
+        bool forcePathStyleAccess = true)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        ArgumentNullException.ThrowIfNull(endpoint);
+        ArgumentNullException.ThrowIfNull(accessKey);
+        ArgumentNullException.ThrowIfNull(secretKey);
+
+        builder.WithEnvironment("ZEEBE_BROKER_DATA_BACKUP_STORE", "S3");
+        builder.WithEnvironment("ZEEBE_BROKER_DATA_BACKUP_S3_BUCKETNAME", bucketName);
+        builder.WithEnvironment("ZEEBE_BROKER_DATA_BACKUP_S3_ENDPOINT", endpoint);
+        builder.WithEnvironment("ZEEBE_BROKER_DATA_BACKUP_S3_REGION", region);
+        builder.WithEnvironment("ZEEBE_BROKER_DATA_BACKUP_S3_ACCESSKEY", accessKey);
+        builder.WithEnvironment("ZEEBE_BROKER_DATA_BACKUP_S3_SECRETKEY", secretKey);
+
+        if (forcePathStyleAccess)
+        {
+            builder.WithEnvironment("ZEEBE_BROKER_DATA_BACKUP_S3_FORCEPATHSTYLEACCESS", "true");
+        }
+
+        return builder;
+    }
 }
