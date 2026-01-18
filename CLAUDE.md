@@ -10,12 +10,27 @@ dotnet build CamundaStartup.sln
 
 # Run the Aspire AppHost (starts all services including Camunda containers)
 dotnet run --project Demo/CamundaStartup.Aspire.Hosting.Camunda.AppHost
-
-# Run with specific secondary storage (postgres, sqlserver, or elastic)
-dotnet run --project Demo/CamundaStartup.Aspire.Hosting.Camunda.AppHost -- --secondaryStorage postgres
 ```
 
 **Prerequisites:** Docker Desktop must be running for container services.
+
+### Secondary Storage Configuration
+
+The secondary storage backend is configured via Aspire parameters. Options: `postgres`, `sqlserver`, `h2`, `elastic` (default).
+
+**Option 1:** Edit `Demo/CamundaStartup.Aspire.Hosting.Camunda.AppHost/appsettings.json`:
+```json
+{
+  "Parameters": {
+    "secondaryStorage": "postgres"
+  }
+}
+```
+
+**Option 2:** Use environment variable:
+```bash
+Parameters__secondaryStorage=postgres dotnet run --project Demo/CamundaStartup.Aspire.Hosting.Camunda.AppHost
+```
 
 ## Project Structure
 
