@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## IMPORTANT
+
+- All Markdown files and documentation must be written in English
+- Prefer Aspire NuGet integrations when available
+
 ## Build & Run Commands
 
 ```bash
