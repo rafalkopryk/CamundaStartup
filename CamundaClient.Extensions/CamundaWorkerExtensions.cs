@@ -28,7 +28,7 @@ public static class CamundaWorkerExtensions
                 await using var scope = serviceProvider.CreateAsyncScope();
                 var handler = (IJobHandlerWithResult)ActivatorUtilities.CreateInstance(
                     scope.ServiceProvider, handlerType);
-                return await handler.HandleAsync(job, ct);
+                return (object?)await handler.HandleAsync(job, ct);
             });
         }
         else if (typeof(IJobHandler).IsAssignableFrom(handlerType))
@@ -48,6 +48,25 @@ public static class CamundaWorkerExtensions
         }
 
         return client;
+    }
+
+    public static IHost CreateJobWorker<T>(
+        this IHost host,
+        JobWorkerConfig config) where T : class
+    {
+        var client = host.Services.GetRequiredService<Camunda.Orchestration.Sdk.CamundaClient>();
+        client.CreateJobWorker<T>(config, host.Services);
+        return host;
+    }
+
+    public static IHost CreateJobWorker(
+        this IHost host,
+        JobWorkerConfig config,
+        Func<ActivatedJob, CancellationToken, Task> handler)
+    {
+        var client = host.Services.GetRequiredService<Camunda.Orchestration.Sdk.CamundaClient>();
+        client.CreateJobWorker(config, handler);
+        return host;
     }
 }
 

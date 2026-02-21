@@ -7,7 +7,9 @@ public interface IJobHandler
     Task HandleAsync(ActivatedJob job, CancellationToken ct);
 }
 
+public interface IJobResult { }
+
 public interface IJobHandlerWithResult
 {
-    Task<object?> HandleAsync(ActivatedJob job, CancellationToken ct);
+    Task<IJobResult> HandleAsync(ActivatedJob job, CancellationToken ct);
 }

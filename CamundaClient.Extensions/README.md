@@ -26,11 +26,13 @@ public class MyJobHandler : IJobHandler
 Or `IJobHandlerWithResult` when the worker should return variables:
 
 ```csharp
+public record MyOutput(string Status) : IJobResult;
+
 public class MyJobHandlerWithResult : IJobHandlerWithResult
 {
-    public async Task<object?> HandleAsync(ActivatedJob job, CancellationToken ct)
+    public Task<IJobResult> HandleAsync(ActivatedJob job, CancellationToken ct)
     {
-        return new { Status = "done" };
+        return Task.FromResult<IJobResult>(new MyOutput("done"));
     }
 }
 ```
@@ -46,14 +48,25 @@ builder.AddCamundaWorkers();
 
 var app = builder.Build();
 
-// Register individual job workers
-var client = app.Services.GetRequiredService<CamundaClient>();
-client.CreateJobWorker<MyJobHandler>(new JobWorkerConfig
+// Register individual job workers using handler type resolved from DI
+app.CreateJobWorker<MyJobHandler>(new JobWorkerConfig
 {
     JobType = "my-task:1",
     JobTimeoutMs = 30_000,
-}, app.Services);
+});
+
+// Or register with a raw async delegate
+app.CreateJobWorker(new JobWorkerConfig
+{
+    JobType = "my-other-task:1",
+    JobTimeoutMs = 30_000,
+}, async (job, ct) =>
+{
+    // Handle job inline
+});
 ```
+
+Calls can be chained since both overloads return `IHost`.
 
 ### Key Features
 
