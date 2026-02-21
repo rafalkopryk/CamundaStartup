@@ -15,7 +15,7 @@ public class DeployBPMNDefinitionService(CamundaClient client, ILogger<DeployBPM
                 var file = await File.ReadAllBytesAsync(weatherForecastDefinition, stoppingToken);
 
                 var multipartFormDataContent = new MultipartFormDataContent();
-                multipartFormDataContent.Add(new ByteArrayContent(file), "file", weatherForecastDefinition);
+                multipartFormDataContent.Add(new ByteArrayContent(file), "resources", weatherForecastDefinition);
                 
                 var response = await client.CreateDeploymentAsync(multipartFormDataContent);
 

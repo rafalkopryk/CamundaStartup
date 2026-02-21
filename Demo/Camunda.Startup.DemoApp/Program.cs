@@ -52,7 +52,8 @@ app.MapPost("/weatherforecast/{requestedDate}", async ([FromRoute] DateOnly requ
         await messageClient.PublishMessageAsync(new MessagePublicationRequest
         {
             Name = "Message_WeatherForecastRequestReceived",
-            Variables = requestedDate,
+            Variables = new WeatherForecastRequestReceived(requestedDate),
+            MessageId = Guid.CreateVersion7().ToString(),
             TimeToLive = 60_000,
         });
 
@@ -69,3 +70,5 @@ app.MapGet("/weatherforecast/{requestedDate}", IResult ([FromRoute] DateOnly req
 .WithName("GetWeatherForecast");
 
 app.Run();
+
+public record WeatherForecastRequestReceived(DateOnly RequestedDate);
