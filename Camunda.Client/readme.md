@@ -1,4 +1,4 @@
-﻿# Camunda.Client
+﻿# Camunda.Client (deprecated)
 
 ## Installation
 To integrate Camunda with your .NET application, you need to install the necessary packages. Add the following packages to your project:

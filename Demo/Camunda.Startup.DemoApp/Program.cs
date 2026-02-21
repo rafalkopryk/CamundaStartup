@@ -28,19 +28,19 @@ builder.AddCamundaWorkers();
 
 var app = builder.Build();
 
-var client = app.Services.GetRequiredService<CamundaClient>();
-client.CreateJobWorker<RetrieveWeatherForecastJobHandler>(new JobWorkerConfig
+app.CreateJobWorker<RetrieveWeatherForecastJobHandler>(new JobWorkerConfig
 {
     JobType = "weather-forecast-retrieve:1",
     JobTimeoutMs = 30_000,
     PollTimeoutMs = 10_000
-}, app.Services);
+});
 
-client.CreateJobWorker<SendNotificationJobHandler>(new JobWorkerConfig
+app.CreateJobWorker<SendNotificationJobHandler>(new JobWorkerConfig
 {
     JobType = "send-notification:1",
     JobTimeoutMs = 30_000,
-}, app.Services);
+});
+
 
 app.MapDefaultEndpoints();
 
