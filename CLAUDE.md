@@ -41,7 +41,8 @@ Parameters__secondaryStorage=postgres dotnet run --project Demo/CamundaStartup.A
 
 ```
 CamundaStartup/
-├── Camunda.Client/                    # Core client library (gRPC + REST)
+├── Camunda.Client/                    # (deprecated) Legacy gRPC/REST client
+├── CamundaClient.Extensions/          # Job worker infrastructure (IJobHandler, IJobResult, OTel)
 ├── CamundaStartup.Aspire.Hosting.Camunda/  # Aspire hosting extensions
 └── Demo/
     ├── Camunda.Startup.DemoApp/       # Sample web API with weather forecast workflow
@@ -57,11 +58,12 @@ This is a .NET 10 / Aspire 13 solution for integrating Camunda 8 workflow automa
 
 | Project                                            | Description                                                          |
 |----------------------------------------------------|----------------------------------------------------------------------|
-| **Camunda.Client**                                 | Core client library - gRPC/REST clients, job workers, message publishing |
-| **CamundaStartup.Aspire.Hosting.Camunda**          | Aspire extensions - `AddCamunda()`, storage backends, S3 backup      |
+| **CamundaClient.Extensions**                       | Job worker infrastructure — `IJobHandler`, `IJobHandlerWithResult`, `IJobResult`, DI scoping, OTel tracing |
+| **CamundaStartup.Aspire.Hosting.Camunda**          | Aspire extensions — `AddCamunda()`, storage backends, S3 backup      |
 | **Camunda.Startup.DemoApp**                        | Sample web API demonstrating weather forecast workflow               |
-| **CamundaStartup.Aspire.Hosting.Camunda.AppHost**  | Aspire orchestration host - wires up all containers and services     |
-| **CamundaStartup.ServiceDefaults**                 | Shared configuration - OpenTelemetry, resilience, service discovery  |
+| **CamundaStartup.Aspire.Hosting.Camunda.AppHost**  | Aspire orchestration host — wires up all containers and services     |
+| **CamundaStartup.ServiceDefaults**                 | Shared configuration — OpenTelemetry, resilience, service discovery  |
+| ~~**Camunda.Client**~~                             | *(deprecated)* Legacy gRPC/REST client — use `Camunda.Orchestration.Sdk` directly |
 
 ### Demo Application Flow
 
@@ -77,23 +79,46 @@ GET /weatherforecast/{date}
 
 ### Key Patterns
 
-**Job Worker Registration:**
+**Worker Hosted Service Registration:**
 ```csharp
-builder.Services.AddCamunda(
-    options => options.Endpoint = connectionString,
-    builder => builder.AddWorker<MyJobHandler>());
+// In Program.cs — registers the background service that drives all workers
+builder.AddCamundaWorkers();
+
+var app = builder.Build();
+
+app.CreateJobWorker<MyJobHandler>(new JobWorkerConfig
+{
+    JobType = "my-task:1",
+    JobTimeoutMs = 30_000,
+});
 ```
 
-**Job Handler Implementation:**
+**Job Handler (fire-and-forget):**
 ```csharp
-[JobWorker(Type = "my-task:1")]
+using Camunda.Client.Extensions;
+using Camunda.Orchestration.Sdk.Runtime;
+
 public class MyJobHandler : IJobHandler
 {
-    public async Task Handle(IJobClient client, IJob job, CancellationToken ct)
+    public Task HandleAsync(ActivatedJob job, CancellationToken ct)
     {
-        var input = job.GetVariablesAsType<MyInput>();
-        // Process job...
-        // Auto-completes by default, or call client.CompleteJobCommand(job)
+        var input = job.GetVariables<MyInput>();
+        // Process job — auto-completes after return
+        return Task.CompletedTask;
+    }
+}
+```
+
+**Job Handler with Result:**
+```csharp
+public record MyOutput(string Status) : IJobResult;
+
+public class MyJobHandler : IJobHandlerWithResult
+{
+    public Task<IJobResult> HandleAsync(ActivatedJob job, CancellationToken ct)
+    {
+        var input = job.GetVariables<MyInput>();
+        return Task.FromResult<IJobResult>(new MyOutput("done"));
     }
 }
 ```
@@ -106,14 +131,13 @@ public record MyMessage(string Data);
 await messageClient.Publish(new MyMessage("data"), correlationKey);
 ```
 
-### JobWorker Configuration Options
+### JobWorkerConfig Options
 
-- `Type` - Job type matching BPMN service task
-- `AutoComplete` - Auto-complete job after handler (default: true)
-- `UseStream` - Use gRPC streaming vs REST polling
-- `TimeoutInMs` - Job lock timeout
-- `FetchVariables` - Specific variables to fetch (empty = all)
-- `PollingDelayInMs` / `PollingRequestTimeoutInMs` - Polling behavior
+| Property | Description |
+|----------|-------------|
+| `JobType` | Job type matching BPMN service task |
+| `JobTimeoutMs` | Job lock timeout in ms |
+| `PollTimeoutMs` | Polling request timeout in ms |
 
 ### BPMN Deployment Pattern
 

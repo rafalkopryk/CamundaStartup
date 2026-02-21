@@ -25,8 +25,9 @@ Activate when user:
 
 3. **Check compliance with .NET code**:
    - Do handlers exist for all service tasks?
-   - Search for classes with `[JobWorker(Type = "...")]` attribute
-   - Compare BPMN types with registered workers
+   - Search for classes implementing `IJobHandler` or `IJobHandlerWithResult`
+   - Cross-reference job types with `CreateJobWorker<T>()` calls in `Program.cs`
+   - Compare BPMN task types with registered workers
 
 4. **Verify against CAMUNDA_SPECIFICS.md**:
    - Are correct Zeebe namespaces used?

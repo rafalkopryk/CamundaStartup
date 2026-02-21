@@ -18,8 +18,8 @@ Activate when user:
    - Find task types from `<zeebe:taskDefinition type="..." />` extensions
 
 2. **Identify Missing Handlers**
-   - Search codebase for existing `[JobWorker(Type = "...")]` attributes
-   - Compare against service tasks found in BPMN
+   - Search codebase for existing classes implementing `IJobHandler` or `IJobHandlerWithResult`
+   - Cross-reference with `CreateJobWorker<T>()` registrations in `Program.cs`
    - List service tasks that need handlers
 
 3. **Ask User for Location**
@@ -29,13 +29,12 @@ Activate when user:
 4. **Generate JobHandler Classes**
    For each missing service task, generate:
    - Class file named `{PascalCaseName}JobHandler.cs`
-   - Implements `IJobHandler` interface
-   - `[JobWorker(Type = "task-type")]` attribute matching BPMN
+   - Implements `IJobHandler` (or `IJobHandlerWithResult` if outputs are needed)
    - Input record for process variables (if extractable from BPMN)
 
 5. **Update Worker Registration**
    - Show user how to register new workers in `Program.cs`
-   - Provide `AddWorker<T>()` code snippet
+   - Provide `app.CreateJobWorker<T>()` code snippet
 
 ## BPMN Parsing Reference
 
@@ -70,20 +69,20 @@ See [TEMPLATES.md](./TEMPLATES.md) for JobHandler code templates.
 For a service task with type `send-notification:1`:
 
 ```csharp
-using Camunda.Client.Jobs;
+using Camunda.Client.Extensions;
+using Camunda.Orchestration.Sdk.Runtime;
 
 namespace MyApp.Feature;
 
-[JobWorker(Type = "send-notification:1")]
 public class SendNotificationJobHandler : IJobHandler
 {
-    public async Task Handle(IJobClient client, IJob job, CancellationToken cancellationToken)
+    public Task HandleAsync(ActivatedJob job, CancellationToken ct)
     {
-        var input = job.GetVariablesAsType<SendNotificationInput>();
+        var input = job.GetVariables<SendNotificationInput>();
 
         // TODO: Implement notification logic
 
-        // Job auto-completes by default
+        return Task.CompletedTask;
     }
 }
 
@@ -93,16 +92,16 @@ public record SendNotificationInput(/* Add expected properties */);
 ## Registration Snippet
 
 ```csharp
-var jobWorkerDefault = new JobWorkerConfiguration();
-builder.Services.AddCamunda(
-    options => options.Endpoint = builder.Configuration.GetConnectionString("camunda"),
-    builder => builder
-        .AddWorker<SendNotificationJobHandler>(jobWorkerDefault));
+app.CreateJobWorker<SendNotificationJobHandler>(new JobWorkerConfig
+{
+    JobType = "send-notification:1",
+    JobTimeoutMs = 30_000,
+});
 ```
 
 ## Related Files
 
-- `Camunda.Client/Jobs/IJobHandler.cs` - Handler interface
-- `Camunda.Client/Jobs/JobWorkerAttribute.cs` - Worker attribute
-- `Demo/Camunda.Startup.DemoApp/Feature/` - Example handlers
-- `Demo/Camunda.Startup.DemoApp/Program.cs` - Worker registration
+- `CamundaClient.Extensions/IJobHandler.cs` — `IJobHandler`, `IJobHandlerWithResult`, `IJobResult`
+- `CamundaClient.Extensions/CamundaWorkerExtensions.cs` — `AddCamundaWorkers()`, `CreateJobWorker<T>()`
+- `Demo/Camunda.Startup.DemoApp/Feature/` — Example handlers
+- `Demo/Camunda.Startup.DemoApp/Program.cs` — Worker registration
