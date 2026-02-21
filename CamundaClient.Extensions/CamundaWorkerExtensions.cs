@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Camunda.Orchestration.Sdk;
 using Camunda.Orchestration.Sdk.Runtime;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,20 +26,40 @@ public static class CamundaWorkerExtensions
         {
             client.CreateJobWorker(config, async (job, ct) =>
             {
-                await using var scope = serviceProvider.CreateAsyncScope();
-                var handler = (IJobHandlerWithResult)ActivatorUtilities.CreateInstance(
-                    scope.ServiceProvider, handlerType);
-                return (object?)await handler.HandleAsync(job, ct);
+                using var activity = Diagnostics.StartActivity(job);
+                try
+                {
+                    await using var scope = serviceProvider.CreateAsyncScope();
+                    var handler = (IJobHandlerWithResult)ActivatorUtilities.CreateInstance(
+                        scope.ServiceProvider, handlerType);
+                    return (object?)await handler.HandleAsync(job, ct);
+                }
+                catch (Exception ex)
+                {
+                    activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                    activity?.AddException(ex);
+                    throw;
+                }
             });
         }
         else if (typeof(IJobHandler).IsAssignableFrom(handlerType))
         {
             client.CreateJobWorker(config, async (job, ct) =>
             {
-                await using var scope = serviceProvider.CreateAsyncScope();
-                var handler = (IJobHandler)ActivatorUtilities.CreateInstance(
-                    scope.ServiceProvider, handlerType);
-                await handler.HandleAsync(job, ct);
+                using var activity = Diagnostics.StartActivity(job);
+                try
+                {
+                    await using var scope = serviceProvider.CreateAsyncScope();
+                    var handler = (IJobHandler)ActivatorUtilities.CreateInstance(
+                        scope.ServiceProvider, handlerType);
+                    await handler.HandleAsync(job, ct);
+                }
+                catch (Exception ex)
+                {
+                    activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                    activity?.AddException(ex);
+                    throw;
+                }
             });
         }
         else
