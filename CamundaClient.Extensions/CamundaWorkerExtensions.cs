@@ -32,7 +32,7 @@ public static class CamundaWorkerExtensions
                     await using var scope = serviceProvider.CreateAsyncScope();
                     var handler = (IJobHandlerWithResult)ActivatorUtilities.CreateInstance(
                         scope.ServiceProvider, handlerType);
-                    return (object?)await handler.HandleAsync(job, ct);
+                    return await handler.HandleAsync(job, ct);
                 }
                 catch (Exception ex)
                 {

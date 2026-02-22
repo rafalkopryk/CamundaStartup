@@ -69,7 +69,7 @@ This is a .NET 10 / Aspire 13 solution for integrating Camunda 8 workflow automa
 
 ```
 POST /weatherforecast/{date}
-  → IMessageClient.Publish() → Camunda (async) → Creates service task
+  → Camunda (async) → Creates service task
   → Worker picks up task → JobHandler processes → Caches result
   → API returns 202 Accepted immediately
 
@@ -121,14 +121,6 @@ public class MyJobHandler : IJobHandlerWithResult
         return Task.FromResult<IJobResult>(new MyOutput("done"));
     }
 }
-```
-
-**Message Publishing:**
-```csharp
-[CamundaMessage(Name = "Message_Name", TimeToLiveInMs = 60_000)]
-public record MyMessage(string Data);
-
-await messageClient.Publish(new MyMessage("data"), correlationKey);
 ```
 
 ### JobWorkerConfig Options
