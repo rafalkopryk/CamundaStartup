@@ -42,7 +42,7 @@ Parameters__secondaryStorage=postgres dotnet run --project Demo/CamundaStartup.A
 ```
 CamundaStartup/
 ├── Camunda.Client/                    # (deprecated) Legacy gRPC/REST client
-├── CamundaClient.Extensions/          # Job worker infrastructure (IJobHandler, IJobResult, OTel)
+├── CamundaClient.Extensions/          # Job worker infrastructure (IJobHandler, IJobHandler<T>, OTel)
 ├── CamundaStartup.Aspire.Hosting.Camunda/  # Aspire hosting extensions
 └── Demo/
     ├── Camunda.Startup.DemoApp/       # Sample web API with weather forecast workflow
@@ -58,7 +58,7 @@ This is a .NET 10 / Aspire 13 solution for integrating Camunda 8 workflow automa
 
 | Project                                            | Description                                                          |
 |----------------------------------------------------|----------------------------------------------------------------------|
-| **CamundaClient.Extensions**                       | Job worker infrastructure — `IJobHandler`, `IJobHandlerWithResult`, `IJobResult`, DI scoping, OTel tracing |
+| **CamundaClient.Extensions**                       | Job worker infrastructure — `IJobHandler`, `IJobHandler<T>`, DI scoping, OTel tracing |
 | **CamundaStartup.Aspire.Hosting.Camunda**          | Aspire extensions — `AddCamunda()`, storage backends, S3 backup      |
 | **Camunda.Startup.DemoApp**                        | Sample web API demonstrating weather forecast workflow               |
 | **CamundaStartup.Aspire.Hosting.Camunda.AppHost**  | Aspire orchestration host — wires up all containers and services     |
@@ -111,16 +111,23 @@ public class MyJobHandler : IJobHandler
 
 **Job Handler with Result:**
 ```csharp
-public record MyOutput(string Status) : IJobResult;
+public record MyOutput(string Status);
 
-public class MyJobHandler : IJobHandlerWithResult
+public class MyJobHandler : IJobHandler<MyOutput>
 {
-    public Task<IJobResult> HandleAsync(ActivatedJob job, CancellationToken ct)
+    public Task<MyOutput> HandleAsync(ActivatedJob job, CancellationToken ct)
     {
         var input = job.GetVariables<MyInput>();
-        return Task.FromResult<IJobResult>(new MyOutput("done"));
+        return Task.FromResult(new MyOutput("done"));
     }
 }
+
+// Registration — specify both handler type and output type
+app.CreateJobWorker<MyJobHandler, MyOutput>(new JobWorkerConfig
+{
+    JobType = "my-task:1",
+    JobTimeoutMs = 30_000,
+});
 ```
 
 ### JobWorkerConfig Options

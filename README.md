@@ -7,7 +7,7 @@ A collection of .NET projects for integrating and hosting Camunda 8 workflow aut
 .NET Aspire hosting extensions that provide `AddCamunda()` and resource definitions for configuring Camunda 8 inside a .NET Aspire AppHost. Supports multiple secondary storage backends (PostgreSQL, SQL Server, H2, Elasticsearch) and S3 backup.
 
 ### CamundaClient.Extensions
-Lightweight job worker infrastructure for .NET applications using `Camunda.Orchestration.Sdk`. Provides `IJobHandler` / `IJobHandlerWithResult` / `IJobResult` interfaces, DI-scoped handler resolution, OpenTelemetry tracing via a dedicated `ActivitySource`, and `AddCamundaWorkers()` / `CreateJobWorker<T>()` extension methods.
+Lightweight job worker infrastructure for .NET applications using `Camunda.Orchestration.Sdk`. Provides `IJobHandler` / `IJobHandler<T>` interfaces, DI-scoped handler resolution, OpenTelemetry tracing via a dedicated `ActivitySource`, and `AddCamundaWorkers()` / `CreateJobWorker<T>()` extension methods.
 
 ### Camunda.Client *(deprecated)*
 > **Deprecated.** Use `CamundaClient.Extensions` with `Camunda.Orchestration.Sdk` directly instead.

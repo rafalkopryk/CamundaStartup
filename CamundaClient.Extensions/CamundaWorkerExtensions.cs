@@ -15,68 +15,19 @@ public static class CamundaWorkerExtensions
         return builder;
     }
 
-    public static Camunda.Orchestration.Sdk.CamundaClient CreateJobWorker<T>(
-        this Camunda.Orchestration.Sdk.CamundaClient client,
-        JobWorkerConfig config,
-        IServiceProvider serviceProvider) where T : class
-    {
-        var handlerType = typeof(T);
-
-        if (typeof(IJobHandlerWithResult).IsAssignableFrom(handlerType))
-        {
-            client.CreateJobWorker(config, async (job, ct) =>
-            {
-                using var activity = Diagnostics.StartActivity(job);
-                try
-                {
-                    await using var scope = serviceProvider.CreateAsyncScope();
-                    var handler = (IJobHandlerWithResult)ActivatorUtilities.CreateInstance(
-                        scope.ServiceProvider, handlerType);
-                    return await handler.HandleAsync(job, ct);
-                }
-                catch (Exception ex)
-                {
-                    activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-                    activity?.AddException(ex);
-                    throw;
-                }
-            });
-        }
-        else if (typeof(IJobHandler).IsAssignableFrom(handlerType))
-        {
-            client.CreateJobWorker(config, async (job, ct) =>
-            {
-                using var activity = Diagnostics.StartActivity(job);
-                try
-                {
-                    await using var scope = serviceProvider.CreateAsyncScope();
-                    var handler = (IJobHandler)ActivatorUtilities.CreateInstance(
-                        scope.ServiceProvider, handlerType);
-                    await handler.HandleAsync(job, ct);
-                }
-                catch (Exception ex)
-                {
-                    activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-                    activity?.AddException(ex);
-                    throw;
-                }
-            });
-        }
-        else
-        {
-            throw new InvalidOperationException(
-                $"{handlerType.Name} must implement IJobHandler or IJobHandlerWithResult.");
-        }
-
-        return client;
-    }
-
     public static IHost CreateJobWorker<T>(
         this IHost host,
-        JobWorkerConfig config) where T : class
+        JobWorkerConfig config) where T : class, IJobHandler
     {
-        var client = host.Services.GetRequiredService<Camunda.Orchestration.Sdk.CamundaClient>();
-        client.CreateJobWorker<T>(config, host.Services);
+        host.GetCamundaClient().CreateJobWorker<T>(config, host.Services);
+        return host;
+    }
+
+    public static IHost CreateJobWorker<T, TOutput>(
+        this IHost host,
+        JobWorkerConfig config) where T : class, IJobHandler<TOutput>
+    {
+        host.GetCamundaClient().CreateJobWorker<T, TOutput>(config, host.Services);
         return host;
     }
 
@@ -85,14 +36,82 @@ public static class CamundaWorkerExtensions
         JobWorkerConfig config,
         Func<ActivatedJob, CancellationToken, Task> handler)
     {
-        var client = host.Services.GetRequiredService<Camunda.Orchestration.Sdk.CamundaClient>();
-        client.CreateJobWorker(config, handler);
+        host.GetCamundaClient().CreateJobWorker(config, async (job, ct) =>
+        {
+            await CamundaClientExtensions.WithTracing(job, () => handler(job, ct));
+        });
         return host;
+    }
+
+    private static CamundaClient GetCamundaClient(this IHost host) =>
+        host.Services.GetRequiredService<CamundaClient>();
+}
+
+public static class CamundaClientExtensions
+{
+    public static CamundaClient CreateJobWorker<T>(
+        this CamundaClient client,
+        JobWorkerConfig config,
+        IServiceProvider serviceProvider) where T : class, IJobHandler
+    {
+        client.CreateJobWorker(config, async (job, ct) =>
+        {
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var handler = ActivatorUtilities.CreateInstance<T>(scope.ServiceProvider);
+            await WithTracing(job, () => handler.HandleAsync(job, ct));
+        });
+
+        return client;
+    }
+
+    public static CamundaClient CreateJobWorker<T, TOutput>(
+        this CamundaClient client,
+        JobWorkerConfig config,
+        IServiceProvider serviceProvider) where T : class, IJobHandler<TOutput>
+    {
+        client.CreateJobWorker(config, async (job, ct) =>
+        {
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var handler = ActivatorUtilities.CreateInstance<T>(scope.ServiceProvider);
+            return await WithTracing(job, () => handler.HandleAsync(job, ct));
+        });
+
+        return client;
+    }
+
+    internal static async Task WithTracing(ActivatedJob job, Func<Task> action)
+    {
+        using var activity = Diagnostics.StartActivity(job);
+        try
+        {
+            await action();
+        }
+        catch (Exception ex)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            activity?.AddException(ex);
+            throw;
+        }
+    }
+
+    private static async Task<T> WithTracing<T>(ActivatedJob job, Func<Task<T>> action)
+    {
+        using var activity = Diagnostics.StartActivity(job);
+        try
+        {
+            return await action();
+        }
+        catch (Exception ex)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            activity?.AddException(ex);
+            throw;
+        }
     }
 }
 
 public class CamundaWorkerHostedService(
-    Camunda.Orchestration.Sdk.CamundaClient client,
+    CamundaClient client,
     ILogger<CamundaWorkerHostedService> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

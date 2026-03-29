@@ -23,16 +23,16 @@ public class MyJobHandler : IJobHandler
 }
 ```
 
-Implement `IJobHandlerWithResult` when the worker should return variables. The result type must implement `IJobResult`:
+Implement `IJobHandler<T>` when the worker should return variables:
 
 ```csharp
-public record MyOutput(string Status) : IJobResult;
+public record MyOutput(string Status);
 
-public class MyJobHandlerWithResult : IJobHandlerWithResult
+public class MyJobHandlerWithResult : IJobHandler<MyOutput>
 {
-    public Task<IJobResult> HandleAsync(ActivatedJob job, CancellationToken ct)
+    public Task<MyOutput> HandleAsync(ActivatedJob job, CancellationToken ct)
     {
-        return Task.FromResult<IJobResult>(new MyOutput("done"));
+        return Task.FromResult(new MyOutput("done"));
     }
 }
 ```
@@ -48,14 +48,21 @@ builder.AddCamundaWorkers();
 
 var app = builder.Build();
 
-// Register individual job workers using handler type resolved from DI
+// Fire-and-forget handler
 app.CreateJobWorker<MyJobHandler>(new JobWorkerConfig
 {
     JobType = "my-task:1",
     JobTimeoutMs = 30_000,
 });
 
-// Or register with a raw async delegate
+// Handler with result
+app.CreateJobWorker<MyJobHandlerWithResult, MyOutput>(new JobWorkerConfig
+{
+    JobType = "my-result-task:1",
+    JobTimeoutMs = 30_000,
+});
+
+// Raw async delegate
 app.CreateJobWorker(new JobWorkerConfig
 {
     JobType = "my-other-task:1",
@@ -66,7 +73,7 @@ app.CreateJobWorker(new JobWorkerConfig
 });
 ```
 
-Calls can be chained since both overloads return `IHost`.
+Calls can be chained since all overloads return `IHost`.
 
 ### 3. OpenTelemetry
 
@@ -92,7 +99,7 @@ Exceptions are recorded on the span and the status is set to `Error` before reth
 
 ## Key Features
 
-- **Type-safe results** — `IJobHandlerWithResult` returns `Task<IJobResult>`; only types explicitly implementing `IJobResult` are valid outputs
+- **Type-safe results** — `IJobHandler<T>` returns `Task<T>` with compile-time type safety
 - **DI-friendly** — handlers are resolved per job via `ActivatorUtilities.CreateInstance`, so constructor injection works
 - **Scoped lifetime** — each job execution gets its own `IServiceScope`
 - **Built-in tracing** — every handler invocation produces an OTel span with Camunda-specific tags

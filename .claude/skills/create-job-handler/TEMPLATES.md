@@ -51,7 +51,7 @@ public record {ClassName}Input(/* Add properties */);
 
 ## JobHandler with Result
 
-Use `IJobHandlerWithResult` when the worker must return output variables. The result type must implement `IJobResult`.
+Use `IJobHandler<T>` when the worker must return output variables:
 
 ```csharp
 using Camunda.Client.Extensions;
@@ -59,18 +59,18 @@ using Camunda.Orchestration.Sdk.Runtime;
 
 namespace {Namespace};
 
-public record {ClassName}Output(/* Add properties */) : IJobResult;
+public record {ClassName}Output(/* Add properties */);
 
-public class {ClassName}JobHandler : IJobHandlerWithResult
+public class {ClassName}JobHandler : IJobHandler<{ClassName}Output>
 {
-    public Task<IJobResult> HandleAsync(ActivatedJob job, CancellationToken ct)
+    public Task<{ClassName}Output> HandleAsync(ActivatedJob job, CancellationToken ct)
     {
         var input = job.GetVariables<{ClassName}Input>();
 
         // Business logic...
         var output = new {ClassName}Output(/* ... */);
 
-        return Task.FromResult<IJobResult>(output);
+        return Task.FromResult(output);
     }
 }
 
@@ -98,9 +98,18 @@ Examples:
 
 ## Worker Registration
 
-### Single Worker
+### Fire-and-forget (IJobHandler)
 ```csharp
 app.CreateJobWorker<{ClassName}JobHandler>(new JobWorkerConfig
+{
+    JobType = "{task-type}",
+    JobTimeoutMs = 30_000,
+});
+```
+
+### With Result (IJobHandler<T>)
+```csharp
+app.CreateJobWorker<{ClassName}JobHandler, {ClassName}Output>(new JobWorkerConfig
 {
     JobType = "{task-type}",
     JobTimeoutMs = 30_000,
@@ -110,7 +119,7 @@ app.CreateJobWorker<{ClassName}JobHandler>(new JobWorkerConfig
 ### Multiple Workers (chained)
 ```csharp
 app.CreateJobWorker<FirstJobHandler>(new JobWorkerConfig { JobType = "first-task:1", JobTimeoutMs = 30_000 })
-   .CreateJobWorker<SecondJobHandler>(new JobWorkerConfig { JobType = "second-task:1", JobTimeoutMs = 30_000 })
+   .CreateJobWorker<SecondJobHandler, SecondOutput>(new JobWorkerConfig { JobType = "second-task:1", JobTimeoutMs = 30_000 })
    .CreateJobWorker<ThirdJobHandler>(new JobWorkerConfig { JobType = "third-task:1", JobTimeoutMs = 30_000 });
 ```
 

@@ -18,7 +18,7 @@ Activate when user:
    - Find task types from `<zeebe:taskDefinition type="..." />` extensions
 
 2. **Identify Missing Handlers**
-   - Search codebase for existing classes implementing `IJobHandler` or `IJobHandlerWithResult`
+   - Search codebase for existing classes implementing `IJobHandler` or `IJobHandler<T>`
    - Cross-reference with `CreateJobWorker<T>()` registrations in `Program.cs`
    - List service tasks that need handlers
 
@@ -29,7 +29,7 @@ Activate when user:
 4. **Generate JobHandler Classes**
    For each missing service task, generate:
    - Class file named `{PascalCaseName}JobHandler.cs`
-   - Implements `IJobHandler` (or `IJobHandlerWithResult` if outputs are needed)
+   - Implements `IJobHandler` (or `IJobHandler<T>` if outputs are needed)
    - Input record for process variables (if extractable from BPMN)
 
 5. **Update Worker Registration**
@@ -101,7 +101,7 @@ app.CreateJobWorker<SendNotificationJobHandler>(new JobWorkerConfig
 
 ## Related Files
 
-- `CamundaClient.Extensions/IJobHandler.cs` — `IJobHandler`, `IJobHandlerWithResult`, `IJobResult`
-- `CamundaClient.Extensions/CamundaWorkerExtensions.cs` — `AddCamundaWorkers()`, `CreateJobWorker<T>()`
+- `CamundaClient.Extensions/IJobHandler.cs` — `IJobHandler`, `IJobHandler<T>`
+- `CamundaClient.Extensions/CamundaWorkerExtensions.cs` — `AddCamundaWorkers()`, `CreateJobWorker<T>()`, `CreateJobWorker<T, TOutput>()`
 - `Demo/Camunda.Startup.DemoApp/Feature/` — Example handlers
 - `Demo/Camunda.Startup.DemoApp/Program.cs` — Worker registration

@@ -25,7 +25,7 @@ Activate when user:
 
 3. **Check compliance with .NET code**:
    - Do handlers exist for all service tasks?
-   - Search for classes implementing `IJobHandler` or `IJobHandlerWithResult`
+   - Search for classes implementing `IJobHandler` or `IJobHandler<T>`
    - Cross-reference job types with `CreateJobWorker<T>()` calls in `Program.cs`
    - Compare BPMN task types with registered workers
 
