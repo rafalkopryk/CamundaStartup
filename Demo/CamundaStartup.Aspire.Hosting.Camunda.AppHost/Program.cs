@@ -3,111 +3,81 @@ using CamundaStartup.Aspire.Hosting.Camunda.AppHost;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-// var minio = builder.AddMinioContainer("minio")
-//     .WithDataVolume("minio")
-//     .WithLifetime(ContainerLifetime.Persistent);
-
-var secondaryStorageParameter = builder.AddParameter("secondaryStorage");
-var secondaryStorage = (await secondaryStorageParameter.Resource.GetValueAsync(CancellationToken.None)) switch
-{
-    "postgres" => AddPostgres(),
-    "sqlserver" => AddSqlServer(),
-    "h2" => AddH2(),
-    _ => AddElastic(),
-};
-
 var camunda = builder.AddCamunda("camunda", 8080)
     .WithDataVolume("Camunda")
     .WithLifetime(ContainerLifetime.Persistent);
 
-camunda = secondaryStorage switch
+var storageType = await builder.AddParameter("secondaryStorage").Resource.GetValueAsync(CancellationToken.None);
+var dependency = storageType switch
 {
-    SecondaryStorage.Postgres postgres => camunda.WithRdmbsDatabase(
-        postgres.Database.Resource.JdbcConnectionString,
-        postgres.Server.Resource.UserNameReference,
-        postgres.Server.Resource.PasswordParameter),
-    SecondaryStorage.SqlServer sqlServer => camunda.WithRdmbsDatabase(
-        sqlServer.Database.Resource.JdbcConnectionString,
-        sqlServer.Server.Resource.UserNameReference,
-        sqlServer.Server.Resource.PasswordParameter),
-    SecondaryStorage.Elasticsearch elasticsearch => camunda.WithElasticDatabase(elasticsearch.Server.Resource
-        .GetConnectionStringExpressionWithoutCredentials()),
-    SecondaryStorage.H2 h2 => camunda.WithRdmbsDatabase(
-        h2.JdbcConnectionString,
-        h2.UserNameReference,
-        h2.PasswordParameter),
-    _ => camunda
+    "postgres" => ConfigurePostgres(),
+    "sqlserver" => ConfigureSqlServer(),
+    "h2" => ConfigureH2(),
+    _ => ConfigureElastic(),
 };
 
-if (secondaryStorage.Resource is not null)
-{
-    camunda = camunda.WaitFor(secondaryStorage.Resource);
-}
-    // .WithS3Backup(minio.Resource.UriExpression, minio.Resource.RootUser, minio.Resource.PasswordParameter)
-    //.WaitFor(minio);
+if (dependency is not null)
+    camunda.WaitFor(dependency);
 
-var demoApp = builder.AddProject<Projects.Camunda_Startup_DemoApp>("DemoApp")
+builder.AddProject<Projects.Camunda_Startup_DemoApp>("DemoApp")
     .WithReference(camunda, "camunda")
     .WaitFor(camunda);
 
 builder.Build().Run();
 
-SecondaryStorage AddPostgres()
+return;
+
+IResourceBuilder<IResource> ConfigurePostgres()
 {
     var postgres = builder.AddPostgres("postgres")
         .WithDataVolume("postgres")
         .WithLifetime(ContainerLifetime.Persistent);
-    
+
     var database = postgres.AddDatabase("camunda-database", "camunda");
-    
-    return new SecondaryStorage.Postgres(postgres, database);
+
+    camunda.WithRdmbsDatabase(
+        database.Resource.JdbcConnectionString,
+        postgres.Resource.UserNameReference,
+        postgres.Resource.PasswordParameter);
+
+    return postgres;
 }
 
-SecondaryStorage AddSqlServer()
+IResourceBuilder<IResource> ConfigureSqlServer()
 {
     var sqlServer = builder.AddSqlServer("sqlserver")
         .WithDataVolume("sqlserver")
-        
         .WithLifetime(ContainerLifetime.Persistent);
 
     var database = sqlServer.AddDatabase("camunda-database", "camunda");
 
-    return new SecondaryStorage.SqlServer(sqlServer, database);
+    camunda.WithRdmbsDatabase(
+        database.Resource.JdbcConnectionString,
+        sqlServer.Resource.UserNameReference,
+        sqlServer.Resource.PasswordParameter);
+
+    return sqlServer;
 }
 
-SecondaryStorage AddElastic()
+IResourceBuilder<IResource> ConfigureElastic()
 {
     var elastic = builder.AddElasticsearch("elasticsearch")
         .WithEnvironment("xpack.security.enabled", "false")
         .WithDataVolume("elastic")
         .WithLifetime(ContainerLifetime.Persistent);
 
-    return new SecondaryStorage.Elasticsearch(elastic);
+    camunda.WithElasticDatabase(elastic.Resource.GetConnectionStringExpressionWithoutCredentials());
+
+    return elastic;
 }
 
-SecondaryStorage AddH2()
+IResourceBuilder<IResource>? ConfigureH2()
 {
     var jdbcUrl = ReferenceExpression.Create($"jdbc:h2:file:/usr/local/camunda/data/h2/camunda;DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE");
     var username = ReferenceExpression.Create($"sa");
     var password = builder.AddParameter("h2Password", "", secret: true);
 
-    return new SecondaryStorage.H2(jdbcUrl, username, password.Resource);
-}
+    camunda.WithRdmbsDatabase(jdbcUrl, username, password.Resource);
 
-public abstract record SecondaryStorage(IResourceBuilder<IResource>? Resource)
-{
-    public record Postgres(
-        IResourceBuilder<PostgresServerResource> Server,
-        IResourceBuilder<PostgresDatabaseResource> Database) : SecondaryStorage(Server);
-
-    public record SqlServer(
-        IResourceBuilder<SqlServerServerResource> Server,
-        IResourceBuilder<SqlServerDatabaseResource> Database) : SecondaryStorage(Server);
-
-    public record Elasticsearch(IResourceBuilder<ElasticsearchResource> Server) : SecondaryStorage(Server);
-
-    public record H2(
-        ReferenceExpression JdbcConnectionString,
-        ReferenceExpression UserNameReference,
-        ParameterResource PasswordParameter) : SecondaryStorage((IResourceBuilder<IResource>?)null);
+    return null;
 }

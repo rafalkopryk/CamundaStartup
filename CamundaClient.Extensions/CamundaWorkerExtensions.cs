@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using Camunda.Orchestration.Sdk;
-using Camunda.Orchestration.Sdk.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;

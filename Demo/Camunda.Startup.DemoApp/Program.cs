@@ -1,6 +1,4 @@
 using Camunda.Orchestration.Sdk;
-using Camunda.Orchestration.Sdk.Api;
-using Camunda.Orchestration.Sdk.Runtime;
 using Camunda.Startup.DemoApp.Dtos;
 using Camunda.Startup.DemoApp.Feature;
 using Camunda.Client.Extensions;

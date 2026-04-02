@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using Camunda.Orchestration.Sdk.Runtime;
+using Camunda.Orchestration.Sdk;
 
 namespace Camunda.Client.Extensions;
 

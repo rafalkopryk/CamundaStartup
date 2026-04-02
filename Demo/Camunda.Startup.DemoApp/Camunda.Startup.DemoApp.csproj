@@ -8,7 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Camunda.Orchestration.Sdk" Version="8.9.0-alpha.8" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1" />
   </ItemGroup>
 
