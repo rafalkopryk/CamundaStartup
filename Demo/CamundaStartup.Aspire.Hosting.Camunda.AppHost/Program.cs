@@ -12,8 +12,8 @@ var dependency = storageType switch
 {
     "postgres" => ConfigurePostgres(),
     "sqlserver" => ConfigureSqlServer(),
-    "h2" => ConfigureH2(),
-    _ => ConfigureElastic(),
+    "elastic" => ConfigureElastic(),
+    _ => ConfigureH2(),
 };
 
 if (dependency is not null)
