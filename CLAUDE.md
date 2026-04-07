@@ -41,7 +41,6 @@ Parameters__secondaryStorage=postgres dotnet run --project Demo/CamundaStartup.A
 
 ```
 CamundaStartup/
-├── Camunda.Client/                    # (deprecated) Legacy gRPC/REST client
 ├── CamundaClient.Extensions/          # Job worker infrastructure (IJobHandler, IJobHandler<T>, OTel)
 ├── CamundaStartup.Aspire.Hosting.Camunda/  # Aspire hosting extensions
 └── Demo/
@@ -63,7 +62,6 @@ This is a .NET 10 / Aspire 13 solution for integrating Camunda 8 workflow automa
 | **Camunda.Startup.DemoApp**                        | Sample web API demonstrating weather forecast workflow               |
 | **CamundaStartup.Aspire.Hosting.Camunda.AppHost**  | Aspire orchestration host — wires up all containers and services     |
 | **CamundaStartup.ServiceDefaults**                 | Shared configuration — OpenTelemetry, resilience, service discovery  |
-| ~~**Camunda.Client**~~                             | *(deprecated)* Legacy gRPC/REST client — use `Camunda.Orchestration.Sdk` directly |
 
 ### Demo Application Flow
 

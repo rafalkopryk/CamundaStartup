@@ -9,11 +9,6 @@ A collection of .NET projects for integrating and hosting Camunda 8 workflow aut
 ### CamundaClient.Extensions
 Lightweight job worker infrastructure for .NET applications using `Camunda.Orchestration.Sdk`. Provides `IJobHandler` / `IJobHandler<T>` interfaces, DI-scoped handler resolution, OpenTelemetry tracing via a dedicated `ActivitySource`, and `AddCamundaWorkers()` / `CreateJobWorker<T>()` extension methods.
 
-### Camunda.Client *(deprecated)*
-> **Deprecated.** Use `CamundaClient.Extensions` with `Camunda.Orchestration.Sdk` directly instead.
-
-Core client library wrapping the Camunda 8 REST and gRPC APIs. Provides job worker primitives, message publishing via `IMessageClient`, BPMN deployment, and OpenTelemetry instrumentation.
-
 ## Demo
 
 ### CamundaStartup.Aspire.Hosting.Camunda.AppHost
