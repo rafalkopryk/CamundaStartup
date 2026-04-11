@@ -7,7 +7,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - All Markdown files and documentation must be written in English
 - Prefer Aspire NuGet integrations when available
 
-## Build & Run Commands
+# Build & Run Commands
+
+## Using Aspire CLI (Recommended)
+
+```bash
+# Start the application
+aspire start
+
+# Start in isolated mode (for worktrees/preventing port conflicts)
+aspire start --isolated
+
+# Stop the application
+aspire stop
+```
+
+## Using dotnet CLI
 
 ```bash
 # Build entire solution
