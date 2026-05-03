@@ -20,18 +20,28 @@ public static class CamundaBuilderExtensions
             .WithHttpEndpoint(port: DefaultGrpcPort, targetPort: DefaultGrpcPort, CamundaResource.GprcEndpointName)
             .WithHttpEndpoint(port: 9600, targetPort: 9600, name: "internal")
             .WithImage(CamundaContainerImageTags.Image, CamundaContainerImageTags.Tag)
-            
-            .WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_METHOD", "basic")
-            .WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_UNPROTECTEDAPI", "true")
-            .WithEnvironment("CAMUNDA_SECURITY_AUTHORIZATIONS_ENABLED", "false")
-            .WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_USERS[0]_USERNAME", "demo")
-            .WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_USERS[0]_PASSWORD", "demo")
-            .WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_USERS[0]_NAME", "Demo User")
-            .WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_USERS[0]_EMAIL", "demo@demo.com")
-            .WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_DEFAULTROLES_ADMIN_USERS[0]", "demo")
-            
+            .WithEnvironment("CAMUNDA_SECURITY_AUTHORIZATIONS_ENABLED", "true")
             .WithEnvironment("CAMUNDA_DATA_SECONDARYSTORAGE_TYPE", "none")
             .WithHttpHealthCheck("actuator/health/readiness", 200, "internal");
+    }
+
+    public static IResourceBuilder<CamundaResource> WithBasicAuth(
+        this IResourceBuilder<CamundaResource> builder,
+        string username = "demo",
+        string password = "demo",
+        string displayName = "Demo User",
+        string email = "demo@demo.com")
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        return builder
+            .WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_METHOD", "basic")
+            .WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_UNPROTECTEDAPI", "true")
+            .WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_USERS[0]_USERNAME", username)
+            .WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_USERS[0]_PASSWORD", password)
+            .WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_USERS[0]_NAME", displayName)
+            .WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_USERS[0]_EMAIL", email)
+            .WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_DEFAULTROLES_ADMIN_USERS[0]", username);
     }
 
     public static IResourceBuilder<CamundaResource> WithElasticDatabase(this IResourceBuilder<CamundaResource> builder, ReferenceExpression? elasticConnectionString)
@@ -93,6 +103,56 @@ public static class CamundaBuilderExtensions
             builder.WithEnvironment("ZEEBE_BROKER_DATA_BACKUP_S3_FORCEPATHSTYLEACCESS", "true");
         }
 
+        return builder;
+    }
+
+    public static IResourceBuilder<CamundaResource> WithOidc(
+        this IResourceBuilder<CamundaResource> builder,
+        ReferenceExpression issuerUri,
+        string clientId,
+        string clientSecret,
+        ReferenceExpression redirectUri,
+        string usernameClaim = "preferred_username",
+        string clientIdClaim = "azp",
+        string? groupsClaim = null,
+        string[]? audiences = null,
+        string[]? scope = null)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        ArgumentNullException.ThrowIfNull(issuerUri);
+        ArgumentNullException.ThrowIfNull(clientId);
+        ArgumentNullException.ThrowIfNull(clientSecret);
+        ArgumentNullException.ThrowIfNull(redirectUri);
+
+        audiences ??= [clientId, "orchestration-api"];
+        scope ??= ["openid", "profile", "email"];
+
+        builder
+            .WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_METHOD", "oidc")
+            .WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_OIDC_CLIENTID", clientId)
+            .WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_OIDC_CLIENTSECRET", clientSecret)
+            .WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_OIDC_ISSUERURI", issuerUri)
+            .WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_OIDC_REDIRECTURI", redirectUri)
+            .WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_OIDC_USERNAMECLAIM", usernameClaim)
+            .WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_OIDC_CLIENTIDCLAIM", clientIdClaim);
+
+        for (var i = 0; i < audiences.Length; i++)
+        {
+            builder.WithEnvironment($"CAMUNDA_SECURITY_AUTHENTICATION_OIDC_AUDIENCES_{i}", audiences[i]);
+        }
+
+        for (var i = 0; i < scope.Length; i++)
+        {
+            builder.WithEnvironment($"CAMUNDA_SECURITY_AUTHENTICATION_OIDC_SCOPE_{i}", scope[i]);
+        }
+
+        
+        builder.WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_OIDC_GROUPSCLAIM", groupsClaim);
+
+        builder.WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_DEFAULTROLES_ADMIN_GROUPS_0", "admin");
+
+        
+        
         return builder;
     }
 }

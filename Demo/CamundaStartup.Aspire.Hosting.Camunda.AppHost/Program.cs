@@ -3,9 +3,33 @@ using CamundaStartup.Aspire.Hosting.Camunda.AppHost;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-var camunda = builder.AddCamunda("camunda", 8080)
+var keycloakPassword = builder.AddParameter("keycloakPassword", secret: true);
+var keycloakUser = builder.AddParameter("keycloakUser", "demo");
+
+var keycloak = builder.AddKeycloak(
+        "keycloak",
+        8080,
+        keycloakUser,
+        keycloakPassword)
+    .WithDataVolume()
+    .WithRealmImport("./Realms")
+    .WithLifetime(ContainerLifetime.Persistent)
+    .WithOtlpExporter();
+
+var keycloakHttp = keycloak.GetEndpoint("http");
+var keycloakIssuerUri = ReferenceExpression.Create(
+    $"http://host.containers.internal:{keycloakHttp.Property(EndpointProperty.Port)}/realms/camunda-platform");
+
+var camunda = builder.AddCamunda("camunda", 8081)
     .WithDataVolume("Camunda")
-    .WithLifetime(ContainerLifetime.Persistent);
+    .WithLifetime(ContainerLifetime.Persistent)
+    .WithOidc(
+        issuerUri: keycloakIssuerUri,
+        clientId: "orchestration",
+        clientSecret: "orchestration-secret",
+        redirectUri: ReferenceExpression.Create($"http://localhost:8081/sso-callback"),
+        groupsClaim: "$.realm_access.roles")
+    .WaitFor(keycloak);
 
 var storageType = await builder.AddParameter("secondaryStorage").Resource.GetValueAsync(CancellationToken.None);
 var dependency = storageType switch
@@ -21,17 +45,27 @@ if (dependency is not null)
 
 builder.AddProject<Projects.Camunda_Startup_DemoApp>("DemoApp")
     .WithReference(camunda, "camunda")
+    // .WithEnvironment("CAMUNDA_REST_ADDRESS", camunda)
+    // .WithEnvironment("CAMUNDA_AUTH_STRATEGY", "BASIC")
+    // .WithEnvironment("CAMUNDA_BASIC_AUTH_USERNAME", "demo")
+    // .WithEnvironment("CAMUNDA_BASIC_AUTH_PASSWORD", "demo")
+
+    .WithEnvironment("CAMUNDA_AUTH_STRATEGY", "OAUTH")
+    .WithEnvironment("CAMUNDA_OAUTH_URL", "http://localhost:8080/realms/camunda-platform/protocol/openid-connect/token")
+    .WithEnvironment("CAMUNDA_CLIENT_ID", "demoapp")
+    .WithEnvironment("CAMUNDA_CLIENT_SECRET", "demoapp-secret")
+    .WithEnvironment("CAMUNDA_TOKEN_AUDIENCE", "orchestration-api")
     .WaitFor(camunda);
 
 builder.Build().Run();
 
-return;
 
 IResourceBuilder<IResource> ConfigurePostgres()
 {
     var postgres = builder.AddPostgres("postgres")
         .WithDataVolume("postgres")
-        .WithLifetime(ContainerLifetime.Persistent);
+        .WithLifetime(ContainerLifetime.Persistent)
+        .WithPgAdmin();
 
     var database = postgres.AddDatabase("camunda-database", "camunda");
 
