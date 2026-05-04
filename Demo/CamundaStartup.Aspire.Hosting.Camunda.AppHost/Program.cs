@@ -3,33 +3,33 @@ using CamundaStartup.Aspire.Hosting.Camunda.AppHost;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-var keycloakPassword = builder.AddParameter("keycloakPassword", secret: true);
-var keycloakUser = builder.AddParameter("keycloakUser", "demo");
+var identity = builder.AddProject<Projects.Camunda_Startup_IdentityServer>("identity")
+    .WithEndpoint("http", e =>
+    {
+        e.Port = 8080;
+        e.TargetPort = 8080;
+        e.IsProxied = false;
+    })
+    .WithExternalHttpEndpoints();
 
-var keycloak = builder.AddKeycloak(
-        "keycloak",
-        8080,
-        keycloakUser,
-        keycloakPassword)
-    .WithDataVolume()
-    .WithRealmImport("./Realms")
-    .WithLifetime(ContainerLifetime.Persistent)
-    .WithOtlpExporter();
-
-var keycloakHttp = keycloak.GetEndpoint("http");
-var keycloakIssuerUri = ReferenceExpression.Create(
-    $"http://host.containers.internal:{keycloakHttp.Property(EndpointProperty.Port)}/realms/camunda-platform");
+var identityHttp = identity.GetEndpoint("http");
+var identityIssuerUri = ReferenceExpression.Create(
+    $"http://host.containers.internal:{identityHttp.Property(EndpointProperty.Port)}");
 
 var camunda = builder.AddCamunda("camunda", 8081)
     .WithDataVolume("Camunda")
     .WithLifetime(ContainerLifetime.Persistent)
     .WithOidc(
-        issuerUri: keycloakIssuerUri,
+        issuerUri: identityIssuerUri,
         clientId: "orchestration",
         clientSecret: "orchestration-secret",
         redirectUri: ReferenceExpression.Create($"http://localhost:8081/sso-callback"),
-        groupsClaim: "$.realm_access.roles")
-    .WaitFor(keycloak);
+        // Duende emits the client identifier as the OAuth2-standard `client_id` claim
+        // in access tokens, not the OIDC ID-token-only `azp` claim.
+        clientIdClaim: "client_id",
+        groupsClaim: "$.role",
+        scope: ["openid", "profile", "email", "orchestration-api"])
+    .WaitFor(identity);
 
 var storageType = await builder.AddParameter("secondaryStorage").Resource.GetValueAsync(CancellationToken.None);
 var dependency = storageType switch
@@ -51,7 +51,7 @@ builder.AddProject<Projects.Camunda_Startup_DemoApp>("DemoApp")
     // .WithEnvironment("CAMUNDA_BASIC_AUTH_PASSWORD", "demo")
 
     .WithEnvironment("CAMUNDA_AUTH_STRATEGY", "OAUTH")
-    .WithEnvironment("CAMUNDA_OAUTH_URL", "http://localhost:8080/realms/camunda-platform/protocol/openid-connect/token")
+    .WithEnvironment("CAMUNDA_OAUTH_URL", "http://localhost:8080/connect/token")
     .WithEnvironment("CAMUNDA_CLIENT_ID", "demoapp")
     .WithEnvironment("CAMUNDA_CLIENT_SECRET", "demoapp-secret")
     .WithEnvironment("CAMUNDA_TOKEN_AUDIENCE", "orchestration-api")
