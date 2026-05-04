@@ -1,11 +1,13 @@
 using Camunda.Startup.IdentityServer;
+using Camunda.Startup.IdentityServer.Components;
 using Duende.IdentityServer;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 
-builder.Services.AddRazorPages();
+builder.Services.AddRazorComponents();
+builder.Services.AddAuthorization();
 
 builder.Services.AddIdentityServer(options =>
     {
@@ -37,6 +39,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseIdentityServer();
 app.UseAuthorization();
-app.MapRazorPages();
+app.UseAntiforgery();
+app.MapRazorComponents<App>();
 
 app.Run();

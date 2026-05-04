@@ -1,0 +1,53 @@
+@page "/Account/Logout"
+@using Duende.IdentityServer
+@using Duende.IdentityServer.Services
+@using Microsoft.AspNetCore.Authentication
+@inject IIdentityServerInteractionService Interaction
+@inject NavigationManager Nav
+
+<PageTitle>Sign out</PageTitle>
+
+<div class="logout-page">
+    <div class="card">
+        <h1>Signed out</h1>
+        <p>You have been signed out.</p>
+        @if (!string.IsNullOrEmpty(_postLogoutRedirectUri))
+        {
+            <p>
+                Returning to <a href="@_postLogoutRedirectUri">@(_clientName ?? "the application")</a>&hellip;
+            </p>
+        }
+        @if (!string.IsNullOrEmpty(_signOutIframeUrl))
+        {
+            <iframe width="0" height="0" class="signout-iframe" src="@_signOutIframeUrl"></iframe>
+        }
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery] public string? LogoutId { get; set; }
+    [CascadingParameter] public HttpContext? HttpContext { get; set; }
+
+    private string? _postLogoutRedirectUri;
+    private string? _clientName;
+    private string? _signOutIframeUrl;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = await Interaction.GetLogoutContextAsync(LogoutId);
+
+        if (HttpContext?.User.Identity?.IsAuthenticated == true)
+        {
+            await HttpContext.SignOutAsync(IdentityServerConstants.DefaultCookieAuthenticationScheme);
+        }
+
+        _postLogoutRedirectUri = ctx.PostLogoutRedirectUri;
+        _clientName = string.IsNullOrEmpty(ctx.ClientName) ? ctx.ClientId : ctx.ClientName;
+        _signOutIframeUrl = ctx.SignOutIFrameUrl;
+
+        if (!string.IsNullOrEmpty(_postLogoutRedirectUri))
+        {
+            Nav.NavigateTo(_postLogoutRedirectUri, forceLoad: true);
+        }
+    }
+}

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <link rel="stylesheet" href="Camunda.Startup.IdentityServer.styles.css" />
+    <style>body { font-family: system-ui, sans-serif; margin: 0; }</style>
+    <HeadOutlet />
+</head>
+<body>
+    @* SSR-only: do not add @rendermode anywhere — Login.razor relies on HttpContext.SignInAsync *@
+    <Routes />
+</body>
+</html>

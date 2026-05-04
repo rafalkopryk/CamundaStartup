@@ -1,0 +1,72 @@
+@page "/Account/Login"
+@using Duende.IdentityServer
+@using Duende.IdentityServer.Services
+@using Duende.IdentityServer.Test
+@using Microsoft.AspNetCore.Authentication
+@inject TestUserStore Users
+@inject IIdentityServerInteractionService Interaction
+@inject NavigationManager Nav
+
+<PageTitle>Sign in</PageTitle>
+
+<div class="login-page">
+    <div class="card">
+        <h1>Sign in</h1>
+        <form method="post" @formname="login" @onsubmit="HandleLoginAsync">
+            <AntiforgeryToken />
+            <input type="hidden" name="PostedReturnUrl" value="@ReturnUrl" />
+            <label for="Username">Username</label>
+            <input id="Username" name="Username" autofocus value="@Username" />
+            <label for="Password">Password</label>
+            <input id="Password" name="Password" type="password" />
+            <button type="submit">Sign in</button>
+            @if (!string.IsNullOrEmpty(Error))
+            {
+                <div class="error">@Error</div>
+            }
+            <div class="hint">Try <code>demo</code>/<code>demo</code> or <code>rafal</code>/<code>demo</code>.</div>
+        </form>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery] public string? ReturnUrl { get; set; }
+
+    [SupplyParameterFromForm] public string Username { get; set; } = string.Empty;
+    [SupplyParameterFromForm] public string Password { get; set; } = string.Empty;
+    [SupplyParameterFromForm(Name = "PostedReturnUrl")] public string? PostedReturnUrl { get; set; }
+
+    [CascadingParameter] public HttpContext? HttpContext { get; set; }
+
+    public string? Error { get; private set; }
+
+    private async Task HandleLoginAsync()
+    {
+        var target = PostedReturnUrl ?? ReturnUrl;
+        await Interaction.GetAuthorizationContextAsync(target);
+
+        if (!Users.ValidateCredentials(Username, Password))
+        {
+            Error = "Invalid username or password.";
+            return;
+        }
+
+        var user = Users.FindByUsername(Username);
+
+        var isuser = new IdentityServerUser(user.SubjectId)
+        {
+            DisplayName = user.Username,
+            AdditionalClaims = user.Claims.ToArray(),
+        };
+
+        await HttpContext!.SignInAsync(
+            IdentityServerConstants.DefaultCookieAuthenticationScheme,
+            isuser.CreatePrincipal());
+
+        var redirect = (Interaction.IsValidReturnUrl(target) || IsLocal(target)) ? target! : "~/";
+        Nav.NavigateTo(redirect, forceLoad: true);
+    }
+
+    private static bool IsLocal(string? u) =>
+        !string.IsNullOrEmpty(u) && u.StartsWith('/') && !u.StartsWith("//") && !u.StartsWith("/\\");
+}
