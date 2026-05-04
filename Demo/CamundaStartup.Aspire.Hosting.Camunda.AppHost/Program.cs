@@ -13,17 +13,25 @@ var identity = builder.AddProject<Projects.Camunda_Startup_IdentityServer>("iden
     .WithExternalHttpEndpoints();
 
 var identityHttp = identity.GetEndpoint("http");
-var identityIssuerUri = ReferenceExpression.Create(
-    $"http://host.containers.internal:{identityHttp.Property(EndpointProperty.Port)}");
+var identityPort = identityHttp.Property(EndpointProperty.Port);
+// Browser hits the host (localhost); Camunda's backend hits the same IdentityServer
+// from inside its container via host.containers.internal. Configure the four endpoints
+// explicitly per https://docs.camunda.io/docs/self-managed/components/orchestration-cluster/admin/special-oidc-cases/
+// instead of issuer-uri, so each side gets the URL that resolves for it.
+var browserBase = ReferenceExpression.Create($"http://localhost:{identityPort}");
+var backendBase = ReferenceExpression.Create($"http://host.containers.internal:{identityPort}");
 
 var camunda = builder.AddCamunda("camunda", 8081)
     .WithDataVolume("Camunda")
     .WithLifetime(ContainerLifetime.Persistent)
     .WithOidc(
-        issuerUri: identityIssuerUri,
         clientId: "orchestration",
         clientSecret: "orchestration-secret",
         redirectUri: ReferenceExpression.Create($"http://localhost:8081/sso-callback"),
+        authorizationUri: ReferenceExpression.Create($"{browserBase}/connect/authorize"),
+        tokenUri: ReferenceExpression.Create($"{backendBase}/connect/token"),
+        jwkSetUri: ReferenceExpression.Create($"{backendBase}/.well-known/openid-configuration/jwks"),
+        endSessionEndpointUri: ReferenceExpression.Create($"{browserBase}/connect/endsession"),
         // Duende emits the client identifier as the OAuth2-standard `client_id` claim
         // in access tokens, not the OIDC ID-token-only `azp` claim.
         clientIdClaim: "client_id",

@@ -108,10 +108,14 @@ public static class CamundaBuilderExtensions
 
     public static IResourceBuilder<CamundaResource> WithOidc(
         this IResourceBuilder<CamundaResource> builder,
-        ReferenceExpression issuerUri,
         string clientId,
         string clientSecret,
         ReferenceExpression redirectUri,
+        ReferenceExpression? issuerUri = null,
+        ReferenceExpression? authorizationUri = null,
+        ReferenceExpression? tokenUri = null,
+        ReferenceExpression? jwkSetUri = null,
+        ReferenceExpression? endSessionEndpointUri = null,
         string usernameClaim = "preferred_username",
         string clientIdClaim = "azp",
         string? groupsClaim = null,
@@ -119,10 +123,24 @@ public static class CamundaBuilderExtensions
         string[]? scope = null)
     {
         ArgumentNullException.ThrowIfNull(builder);
-        ArgumentNullException.ThrowIfNull(issuerUri);
         ArgumentNullException.ThrowIfNull(clientId);
         ArgumentNullException.ThrowIfNull(clientSecret);
         ArgumentNullException.ThrowIfNull(redirectUri);
+
+        var hasExplicitEndpoints = authorizationUri is not null || tokenUri is not null
+            || jwkSetUri is not null || endSessionEndpointUri is not null;
+
+        if (issuerUri is null && !hasExplicitEndpoints)
+        {
+            throw new ArgumentException(
+                "Either issuerUri or the explicit endpoint URIs (authorizationUri, tokenUri, jwkSetUri, endSessionEndpointUri) must be provided.");
+        }
+
+        if (issuerUri is not null && hasExplicitEndpoints)
+        {
+            throw new ArgumentException(
+                "issuerUri and the explicit endpoint URIs are mutually exclusive. Use issuerUri for discovery, or pass the four explicit endpoints when browser and backend need different URLs.");
+        }
 
         audiences ??= [clientId, "orchestration-api"];
         scope ??= ["openid", "profile", "email"];
@@ -131,10 +149,34 @@ public static class CamundaBuilderExtensions
             .WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_METHOD", "oidc")
             .WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_OIDC_CLIENTID", clientId)
             .WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_OIDC_CLIENTSECRET", clientSecret)
-            .WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_OIDC_ISSUERURI", issuerUri)
             .WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_OIDC_REDIRECTURI", redirectUri)
             .WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_OIDC_USERNAMECLAIM", usernameClaim)
             .WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_OIDC_CLIENTIDCLAIM", clientIdClaim);
+
+        if (issuerUri is not null)
+        {
+            builder.WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_OIDC_ISSUERURI", issuerUri);
+        }
+
+        if (authorizationUri is not null)
+        {
+            builder.WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_OIDC_AUTHORIZATIONURI", authorizationUri);
+        }
+
+        if (tokenUri is not null)
+        {
+            builder.WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_OIDC_TOKENURI", tokenUri);
+        }
+
+        if (jwkSetUri is not null)
+        {
+            builder.WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_OIDC_JWKSETURI", jwkSetUri);
+        }
+
+        if (endSessionEndpointUri is not null)
+        {
+            builder.WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_OIDC_ENDSESSIONENDPOINTURI", endSessionEndpointUri);
+        }
 
         for (var i = 0; i < audiences.Length; i++)
         {

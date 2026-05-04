@@ -52,7 +52,6 @@ public static class Config
             {
                 "http://localhost:8081/sso-callback",
                 "http://localhost:8081/login/oauth2/code/oidcclient",
-                "http://host.containers.internal:8081/sso-callback",
             },
             PostLogoutRedirectUris = { "http://localhost:8081/" },
             AllowedScopes =

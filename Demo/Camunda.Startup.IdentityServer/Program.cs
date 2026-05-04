@@ -11,10 +11,6 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddIdentityServer(options =>
     {
-        // Camunda runs in a container and reaches this host via host.containers.internal.
-        // Pin IssuerUri so tokens minted via the browser-facing localhost URL still
-        // pass Camunda's issuer validation.
-        options.IssuerUri = "http://host.containers.internal:8080";
         options.EmitStaticAudienceClaim = false;
         options.Authentication.CheckSessionCookieSameSiteMode = SameSiteMode.Lax;
     })
