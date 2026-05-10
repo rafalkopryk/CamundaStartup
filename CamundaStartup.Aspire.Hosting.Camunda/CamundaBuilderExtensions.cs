@@ -40,10 +40,10 @@ public static class CamundaBuilderExtensions
 
         builder.Resource.CamundaDatabaseConnectionStringExpression = elasticConnectionString;
 
-        builder.WithEnvironment("CAMUNDA_DATABASE_INDEX_NUMBEROFREPLICAS", "0");
         builder.WithEnvironment("CAMUNDA_DATA_SECONDARYSTORAGE_TYPE", "elasticsearch");
         builder.WithEnvironment("CAMUNDA_DATA_SECONDARYSTORAGE_ELASTICSEARCH_CLUSTERNAME", "elasticsearch");
         builder.WithEnvironment("CAMUNDA_DATA_SECONDARYSTORAGE_ELASTICSEARCH_URL", builder.Resource.CamundaDatabaseConnectionStringExpression);
+        builder.WithEnvironment("CAMUNDA_DATA_SECONDARYSTORAGE_ELASTICSEARCH_NUMBEROFREPLICAS", "0");
         
         return builder;
     }
