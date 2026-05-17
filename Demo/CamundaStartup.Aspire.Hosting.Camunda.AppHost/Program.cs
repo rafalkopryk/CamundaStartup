@@ -12,14 +12,14 @@ var identity = builder.AddProject<Projects.Camunda_Startup_IdentityServer>("iden
     })
     .WithExternalHttpEndpoints();
 
-var identityHttp = identity.GetEndpoint("http");
-var identityPort = identityHttp.Property(EndpointProperty.Port);
 // Browser hits the host (localhost); Camunda's backend hits the same IdentityServer
-// from inside its container via host.containers.internal. Configure the four endpoints
+// from inside its container via host.docker.internal. Configure the four endpoints
 // explicitly per https://docs.camunda.io/docs/self-managed/components/orchestration-cluster/admin/special-oidc-cases/
 // instead of issuer-uri, so each side gets the URL that resolves for it.
-var browserBase = ReferenceExpression.Create($"http://localhost:{identityPort}");
-var backendBase = ReferenceExpression.Create($"http://host.containers.internal:{identityPort}");
+// The port is pinned to 8080 on the endpoint above; using EndpointProperty.Port here
+// would resolve to Aspire's proxy port even with IsProxied=false.
+const string browserBase = "http://localhost:8080";
+const string backendBase = "http://host.docker.internal:8080";
 
 var camunda = builder.AddCamunda("camunda", 8081)
     .WithDataVolume("Camunda")
@@ -63,6 +63,7 @@ builder.AddProject<Projects.Camunda_Startup_DemoApp>("DemoApp")
     .WithEnvironment("CAMUNDA_CLIENT_ID", "demoapp")
     .WithEnvironment("CAMUNDA_CLIENT_SECRET", "demoapp-secret")
     .WithEnvironment("CAMUNDA_TOKEN_AUDIENCE", "orchestration-api")
+    .WithEnvironment("CAMUNDA_DEFAULT_TENANT_ID", "demoapp")
     .WaitFor(camunda);
 
 builder.Build().Run();
