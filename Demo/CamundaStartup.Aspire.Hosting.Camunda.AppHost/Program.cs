@@ -1,29 +1,31 @@
+using Aspire.Hosting.ApplicationModel;
 using CamundaStartup.Aspire.Hosting.Camunda;
 using CamundaStartup.Aspire.Hosting.Camunda.AppHost;
 using CamundaStartup.Aspire.Hosting.RustFS;
+using CamundaStartup.Aspire.Hosting.SeaweedFS;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-
-var rustfs = builder.AddRustFs("rustfs", s3Port: 9000, consolePort: 9001)
-    .WithDataVolume("rustfs")
-    .WithLifetime(ContainerLifetime.Persistent);
-
-var backupBucket = rustfs.AddBucket("camunda-backup");
+var backupStorage = await builder.AddParameter("backupStorage").Resource.GetValueAsync(CancellationToken.None);
+var backup = backupStorage switch
+{
+    "rustfs" => ConfigureRustFs(),
+    _ => ConfigureSeaweedFs(),
+};
 
 var camunda = builder.AddCamunda("camunda", 8081)
     .WithDataVolume("Camunda")
     .WithLifetime(ContainerLifetime.Persistent)
     .WithS3Backup(
-        endpoint: ReferenceExpression.Create($"http://host.docker.internal:{rustfs.Resource.S3Endpoint.Property(EndpointProperty.Port)}"),
-        accessKey: rustfs.Resource.AccessKeyParameter,
-        secretKey: rustfs.Resource.SecretKeyParameter)
+        endpoint: ReferenceExpression.Create($"http://host.docker.internal:{backup.S3Port}"),
+        accessKey: backup.AccessKey,
+        secretKey: backup.SecretKey)
     .WithScheduledBackup(
         schedule: "PT1M",
         retentionWindow: "PT5M",
         retentionCleanupSchedule: "PT1M",
         checkpointInterval: "PT15S")
-    .WaitForCompletion(backupBucket);
+    .WaitForCompletion(backup.BucketInit);
 
 var storageType = await builder.AddParameter("secondaryStorage").Resource.GetValueAsync(CancellationToken.None);
 var dependency = storageType switch
@@ -100,3 +102,39 @@ IResourceBuilder<IResource>? ConfigureH2()
 
     return null;
 }
+
+BackupBinding ConfigureRustFs()
+{
+    var rustfs = builder.AddRustFs("rustfs", s3Port: 9000, consolePort: 9001)
+        .WithDataVolume("rustfs")
+        .WithLifetime(ContainerLifetime.Persistent);
+
+    var bucketInit = rustfs.AddBucket("camunda-backup");
+
+    return new BackupBinding(
+        S3Port: rustfs.Resource.S3Endpoint.Property(EndpointProperty.Port),
+        AccessKey: rustfs.Resource.AccessKeyParameter,
+        SecretKey: rustfs.Resource.SecretKeyParameter,
+        BucketInit: bucketInit);
+}
+
+BackupBinding ConfigureSeaweedFs()
+{
+    var seaweedfs = builder.AddSeaweedFs("seaweedfs", s3Port: 8333, masterPort: 9333, filerPort: 8888)
+        .WithDataVolume("seaweedfs")
+        .WithLifetime(ContainerLifetime.Persistent);
+
+    var bucketInit = seaweedfs.AddBucket("camunda-backup");
+
+    return new BackupBinding(
+        S3Port: seaweedfs.Resource.S3Endpoint.Property(EndpointProperty.Port),
+        AccessKey: seaweedfs.Resource.AccessKeyParameter,
+        SecretKey: seaweedfs.Resource.SecretKeyParameter,
+        BucketInit: bucketInit);
+}
+
+internal record BackupBinding(
+    EndpointReferenceExpression S3Port,
+    ParameterResource AccessKey,
+    ParameterResource SecretKey,
+    IResourceBuilder<ContainerResource> BucketInit);
