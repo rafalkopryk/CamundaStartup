@@ -10,10 +10,9 @@ public static class SeaweedFsBuilderExtensions
     private const int DefaultFilerPort = 8888;
     private const string DefaultRootCredential = "seaweedadmin";
 
-    // SeaweedFS's S3 API rejects every signed request with InvalidAccessKeyId
-    // unless an identities config (-s3.config) is mounted. We generate one at
-    // /etc/seaweedfs/s3.json from the access/secret-key parameters so the same
-    // credentials accepted by Camunda's WithS3Backup work end-to-end.
+    // Uses the README's `weed mini` quick-start: AWS_* env vars enable auth,
+    // S3_BUCKET (comma-separated) pre-creates buckets at startup so no init
+    // container is required. See https://github.com/seaweedfs/seaweedfs#quick-start-for-s3-api-on-docker
     public static IResourceBuilder<SeaweedFsResource> AddSeaweedFs(
         this IDistributedApplicationBuilder builder,
         [ResourceName] string name,
@@ -45,38 +44,16 @@ public static class SeaweedFsBuilderExtensions
                 url.DisplayText = "Filer UI";
                 url.Url = "/buckets/";
             })
-            .WithContainerFiles("/etc/seaweedfs", async (_, ct) =>
+            .WithEnvironment("AWS_ACCESS_KEY_ID", accessKeyParameter)
+            .WithEnvironment("AWS_SECRET_ACCESS_KEY", secretKeyParameter)
+            .WithEnvironment(ctx =>
             {
-                var ak = await accessKeyParameter.GetValueAsync(ct) ?? string.Empty;
-                var sk = await secretKeyParameter.GetValueAsync(ct) ?? string.Empty;
-                var json = $$"""
+                if (resource.Buckets.Count > 0)
                 {
-                  "identities": [
-                    {
-                      "name": "admin",
-                      "credentials": [
-                        {
-                          "accessKey": "{{ak}}",
-                          "secretKey": "{{sk}}"
-                        }
-                      ],
-                      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
-                    }
-                  ]
+                    ctx.EnvironmentVariables["S3_BUCKET"] = string.Join(",", resource.Buckets);
                 }
-                """;
-                return
-                [
-                    new ContainerFile
-                    {
-                        Name = "s3.json",
-                        Contents = json,
-                        Mode = UnixFileMode.UserRead | UnixFileMode.UserWrite
-                            | UnixFileMode.GroupRead | UnixFileMode.OtherRead,
-                    },
-                ];
             })
-            .WithArgs("server", "-s3", "-s3.config=/etc/seaweedfs/s3.json", "-dir=/data");
+            .WithArgs("mini", "-dir=/data");
     }
 
     public static IResourceBuilder<SeaweedFsResource> WithDataVolume(
@@ -89,25 +66,14 @@ public static class SeaweedFsBuilderExtensions
         return builder.WithVolume(name, "/data", isReadOnly);
     }
 
-    public static IResourceBuilder<ContainerResource> AddBucket(
-        this IResourceBuilder<SeaweedFsResource> seaweed,
+    public static IResourceBuilder<SeaweedFsResource> WithBucket(
+        this IResourceBuilder<SeaweedFsResource> builder,
         string bucketName)
     {
-        ArgumentNullException.ThrowIfNull(seaweed);
+        ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(bucketName);
 
-        var initName = $"{seaweed.Resource.Name}-init-{bucketName}";
-
-        var mcHostValue = ReferenceExpression.Create(
-            $"http://{seaweed.Resource.AccessKeyParameter}:{seaweed.Resource.SecretKeyParameter}@host.docker.internal:{seaweed.Resource.S3Endpoint.Property(EndpointProperty.Port)}");
-
-        return seaweed.ApplicationBuilder
-            .AddContainer(initName, "minio/mc", "latest")
-            .WithEnvironment("MC_HOST_seaweedfs", mcHostValue)
-            .WithEntrypoint("/bin/sh")
-            .WithArgs(
-                "-c",
-                $"until mc mb --ignore-existing seaweedfs/{bucketName}; do echo 'waiting for seaweedfs...'; sleep 1; done")
-            .WaitFor(seaweed);
+        builder.Resource.Buckets.Add(bucketName);
+        return builder;
     }
 }

@@ -13,6 +13,8 @@ public sealed class SeaweedFsResource(string name, ParameterResource accessKey, 
 
     public ParameterResource SecretKeyParameter { get; } = secretKey;
 
+    internal List<string> Buckets { get; } = [];
+
     private EndpointReference? _s3Reference;
     public EndpointReference S3Endpoint => _s3Reference ??= new(this, S3EndpointName);
 
