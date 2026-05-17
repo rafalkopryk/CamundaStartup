@@ -16,4 +16,5 @@
   </Folder>
   <Project Path="CamundaClient.Extensions/CamundaClient.Extensions.csproj" />
   <Project Path="CamundaStartup.Aspire.Hosting.Camunda/CamundaStartup.Aspire.Hosting.Camunda.csproj" />
+  <Project Path="CamundaStartup.Aspire.Hosting.RustFS/CamundaStartup.Aspire.Hosting.RustFS.csproj" />
 </Solution>

@@ -95,4 +95,31 @@ public static class CamundaBuilderExtensions
 
         return builder;
     }
+
+    public static IResourceBuilder<CamundaResource> WithScheduledBackup(
+        this IResourceBuilder<CamundaResource> builder,
+        string schedule = "PT1H",
+        string retentionWindow = "P7D",
+        string retentionCleanupSchedule = "PT1H",
+        string? checkpointInterval = null,
+        bool continuous = true)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        ArgumentNullException.ThrowIfNull(schedule);
+        ArgumentNullException.ThrowIfNull(retentionWindow);
+        ArgumentNullException.ThrowIfNull(retentionCleanupSchedule);
+
+        builder.WithEnvironment("CAMUNDA_DATA_PRIMARY_STORAGE_BACKUP_STORE", "S3");
+        builder.WithEnvironment("CAMUNDA_DATA_PRIMARY_STORAGE_BACKUP_CONTINUOUS", continuous ? "true" : "false");
+        builder.WithEnvironment("CAMUNDA_DATA_PRIMARY_STORAGE_BACKUP_SCHEDULE", schedule);
+        builder.WithEnvironment("CAMUNDA_DATA_PRIMARY_STORAGE_BACKUP_RETENTION_WINDOW", retentionWindow);
+        builder.WithEnvironment("CAMUNDA_DATA_PRIMARY_STORAGE_BACKUP_RETENTION_CLEANUP_SCHEDULE", retentionCleanupSchedule);
+
+        if (checkpointInterval is not null)
+        {
+            builder.WithEnvironment("CAMUNDA_DATA_PRIMARY_STORAGE_BACKUP_CHECKPOINT_INTERVAL", checkpointInterval);
+        }
+
+        return builder;
+    }
 }

@@ -1,11 +1,29 @@
 using CamundaStartup.Aspire.Hosting.Camunda;
 using CamundaStartup.Aspire.Hosting.Camunda.AppHost;
+using CamundaStartup.Aspire.Hosting.RustFS;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-var camunda = builder.AddCamunda("camunda", 8080)
-    .WithDataVolume("Camunda")
+
+var rustfs = builder.AddRustFs("rustfs", s3Port: 9000, consolePort: 9001)
+    .WithDataVolume("rustfs")
     .WithLifetime(ContainerLifetime.Persistent);
+
+var backupBucket = rustfs.AddBucket("camunda-backup");
+
+var camunda = builder.AddCamunda("camunda", 8081)
+    .WithDataVolume("Camunda")
+    .WithLifetime(ContainerLifetime.Persistent)
+    .WithS3Backup(
+        endpoint: ReferenceExpression.Create($"http://host.docker.internal:{rustfs.Resource.S3Endpoint.Property(EndpointProperty.Port)}"),
+        accessKey: rustfs.Resource.AccessKeyParameter,
+        secretKey: rustfs.Resource.SecretKeyParameter)
+    .WithScheduledBackup(
+        schedule: "PT1M",
+        retentionWindow: "PT5M",
+        retentionCleanupSchedule: "PT1M",
+        checkpointInterval: "PT15S")
+    .WaitForCompletion(backupBucket);
 
 var storageType = await builder.AddParameter("secondaryStorage").Resource.GetValueAsync(CancellationToken.None);
 var dependency = storageType switch
