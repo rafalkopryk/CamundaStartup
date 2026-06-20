@@ -31,6 +31,10 @@ public static class CamundaBuilderExtensions
             .WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_DEFAULTROLES_ADMIN_USERS[0]", "demo")
             
             .WithEnvironment("CAMUNDA_DATA_SECONDARYSTORAGE_TYPE", "none")
+            .WithEnvironment("ZEEBE_LOG_APPENDER", "Stackdriver")
+            .WithEnvironment("OPERATE_LOG_APPENDER", "Stackdriver")
+            .WithEnvironment("TASKLIST_LOG_APPENDER", "Stackdriver")
+            .WithEnvironment("IDENTITY_LOG_APPENDER", "Stackdriver")
             .WithHttpHealthCheck("actuator/health/readiness", 200, "internal");
     }
 
