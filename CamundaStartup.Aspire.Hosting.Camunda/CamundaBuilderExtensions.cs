@@ -22,6 +22,10 @@ public static class CamundaBuilderExtensions
             .WithImage(CamundaContainerImageTags.Image, CamundaContainerImageTags.Tag)
             .WithEnvironment("CAMUNDA_SECURITY_AUTHORIZATIONS_ENABLED", "true")
             .WithEnvironment("CAMUNDA_DATA_SECONDARYSTORAGE_TYPE", "none")
+            .WithEnvironment("ZEEBE_LOG_APPENDER", "Stackdriver")
+            .WithEnvironment("OPERATE_LOG_APPENDER", "Stackdriver")
+            .WithEnvironment("TASKLIST_LOG_APPENDER", "Stackdriver")
+            .WithEnvironment("IDENTITY_LOG_APPENDER", "Stackdriver")
             .WithHttpHealthCheck("actuator/health/readiness", 200, "internal");
     }
 
