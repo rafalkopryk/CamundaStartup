@@ -196,7 +196,35 @@ public static class CamundaBuilderExtensions
         builder.WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_OIDC_GROUPSCLAIM", groupsClaim);
 
         builder.WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_DEFAULTROLES_ADMIN_GROUPS_0", "admin");
+        // builder.WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_DEFAULTROLES_ADMIN_CLIENTS", "demoapp");
 
+        builder.WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_TENANT_ID", "demoapp");
+        builder.WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_NAME", "demoapp");
+        builder.WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_DESCRIPTION", "demoapp");
+        builder.WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_CLIENTS", "demoapp");
+
+        
+        builder.WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_ROLES_0_ROLE_ID", "microservice");
+        builder.WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_ROLES_0_NAME", "microservice");
+        builder.WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_ROLES_0_DESCRIPTION", "microservice");
+        builder.WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_ROLES_0_CLIENTS", "demoapp");
+
+        
+
+
+        
+        // builder.WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_DESCRIPTION", "demoapp");
+        // builder.WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_CLIENTS", "demoapp");
+
+
+//         CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_TENANT_ID=tenantId
+// CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_NAME="test tenant"
+// CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_DESCRIPTION="test tenant description"
+// CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_CLIENTS='R1,R2,R3,R4'
+// CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_GROUPS='R1,R2,R3,R4'
+// CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_MAPPING_RULES='R1,R2,R3,R4'
+// CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_ROLES='R1,R2,R3,R4'
+// CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_USERS='UserA,UserB,UserC'
         
         
         return builder;

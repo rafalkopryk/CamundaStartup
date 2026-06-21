@@ -25,8 +25,8 @@ var camunda = builder.AddCamunda("camunda", 8081)
     .WithDataVolume("Camunda")
     .WithLifetime(ContainerLifetime.Persistent)
     .WithOidc(
-        clientId: "orchestration",
-        clientSecret: "orchestration-secret",
+        clientId: "camunda-webapp",
+        clientSecret: "camunda-webapp-secret",
         redirectUri: ReferenceExpression.Create($"http://localhost:8081/sso-callback"),
         authorizationUri: ReferenceExpression.Create($"{browserBase}/connect/authorize"),
         tokenUri: ReferenceExpression.Create($"{backendBase}/connect/token"),
@@ -63,7 +63,7 @@ builder.AddProject<Projects.Camunda_Startup_DemoApp>("DemoApp")
     .WithEnvironment("CAMUNDA_CLIENT_ID", "demoapp")
     .WithEnvironment("CAMUNDA_CLIENT_SECRET", "demoapp-secret")
     .WithEnvironment("CAMUNDA_TOKEN_AUDIENCE", "orchestration-api")
-    .WithEnvironment("CAMUNDA_DEFAULT_TENANT_ID", "demoapp")
+    // .WithEnvironment("CAMUNDA_DEFAULT_TENANT_ID", "demoapp")
     .WaitFor(camunda);
 
 builder.Build().Run();

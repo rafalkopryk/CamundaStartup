@@ -26,12 +26,7 @@ public static class Config
         {
             Scopes = { "orchestration-api" },
             UserClaims = { JwtClaimTypes.Role },
-        },
-        new ApiResource("orchestration", "Camunda Orchestration (audience alias)")
-        {
-            Scopes = { "orchestration-api" },
-            UserClaims = { JwtClaimTypes.Role },
-        },
+        }
     ];
 
     public static IEnumerable<Client> Clients =>
@@ -39,12 +34,13 @@ public static class Config
         // Browser SSO / auth-code flow for the Operate webapp.
         new Client
         {
-            ClientId = "orchestration",
+            
+            ClientId = "camunda-webapp",
             ClientName = "Camunda Orchestration (Operate webapp login)",
-            ClientSecrets = { new Secret("orchestration-secret".Sha256()) },
+            ClientSecrets = { new Secret("camunda-webapp-secret".Sha256()) },
 
             AllowedGrantTypes = GrantTypes.Code,
-            RequirePkce = false,
+            RequirePkce = true,
             RequireConsent = false,
             AlwaysIncludeUserClaimsInIdToken = true,
 
@@ -61,14 +57,14 @@ public static class Config
                 IdentityServerConstants.StandardScopes.Email,
                 "orchestration-api",
             },
-            AccessTokenLifetime = 3600,
+            AccessTokenLifetime = 360,
         },
 
         // Machine-to-machine client for DemoApp service-to-Camunda calls.
         new Client
         {
             ClientId = "demoapp",
-            ClientName = "DemoApp (M2M / app-integrations)",
+            ClientName = "DemoApp",
             ClientSecrets = { new Secret("demoapp-secret".Sha256()) },
 
             AllowedGrantTypes = GrantTypes.ClientCredentials,
@@ -80,7 +76,24 @@ public static class Config
             AlwaysSendClientClaims = true,
             // Emit role as a JSON array (["admin"]) so Camunda's groupsClaim JSONPath
             // ($.role) extracts a list, not a scalar string.
-            Claims = { new ClientClaim(JwtClaimTypes.Role, """["admin"]""", IdentityServerConstants.ClaimValueTypes.Json) },
+            // Claims = { new ClientClaim(JwtClaimTypes.Role, """["admin"]""", IdentityServerConstants.ClaimValueTypes.Json) },
+            AccessTokenLifetime = 3600,
+        },
+        new Client
+        {
+            ClientId = "demoapp-v2",
+            ClientName = "DemoAppV2",
+            ClientSecrets = { new Secret("demoapp-secret".Sha256()) },
+
+            AllowedGrantTypes = GrantTypes.ClientCredentials,
+            AllowedScopes = { "orchestration-api" },
+
+            // Empty prefix so the role claim emits as "role" (not "client_role"),
+            // matching the JSONPath Camunda is configured with.
+            ClientClaimsPrefix = "",
+            AlwaysSendClientClaims = true,
+            // Emit role as a JSON array (["admin"]) so Camunda's groupsClaim JSONPath
+            // ($.role) extracts a list, not a scalar string.
             AccessTokenLifetime = 3600,
         },
     ];
@@ -117,6 +130,22 @@ public static class Config
                 new Claim(JwtClaimTypes.EmailVerified, "true", ClaimValueTypes.Boolean),
                 new Claim(JwtClaimTypes.PreferredUserName, "rafal"),
                 new Claim(JwtClaimTypes.Role, """["dev"]""", IdentityServerConstants.ClaimValueTypes.Json),
+            },
+        },
+        new TestUser
+        {
+            SubjectId = "jan",
+            Username = "jan",
+            Password = "demo",
+            Claims =
+            {
+                new Claim(JwtClaimTypes.Name, "Jan User"),
+                new Claim(JwtClaimTypes.GivenName, "Jan"),
+                new Claim(JwtClaimTypes.FamilyName, "User"),
+                new Claim(JwtClaimTypes.Email, "jan@camunda.local"),
+                new Claim(JwtClaimTypes.EmailVerified, "true", ClaimValueTypes.Boolean),
+                new Claim(JwtClaimTypes.PreferredUserName, "jan"),
+                new Claim(JwtClaimTypes.Role, """["operator"]""", IdentityServerConstants.ClaimValueTypes.Json),
             },
         },
     ];
