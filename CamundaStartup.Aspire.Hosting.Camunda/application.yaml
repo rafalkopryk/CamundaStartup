@@ -1,0 +1,201 @@
+management.endpoints.configprops.show-values: always
+
+camunda:
+  backup:
+    enabled: false
+
+  webapps:
+    enabled: true
+
+  system:
+    cpu-thread-count: "3"
+    io-thread-count: "3"
+
+  security:
+    authentication:
+      method: oidc
+      oidc:
+        client-id: ${CAMUNDA_OIDC_CLIENT_ID:camunda-webapp}
+        client-secret: ${CAMUNDA_OIDC_CLIENT_SECRET:camunda-webapp-secret}
+        redirect-uri: ${CAMUNDA_OIDC_REDIRECT_URI:http://localhost:8081/sso-callback}
+        authorization-uri: ${CAMUNDA_OIDC_AUTHORIZATION_URI:http://localhost:8080/connect/authorize}
+        token-uri: ${CAMUNDA_OIDC_TOKEN_URI:http://host.docker.internal:8080/connect/token}
+        jwk-set-uri: ${CAMUNDA_OIDC_JWK_SET_URI:http://host.docker.internal:8080/.well-known/openid-configuration/jwks}
+        end-session-endpoint-uri: ${CAMUNDA_OIDC_END_SESSION_ENDPOINT_URI:http://localhost:8080/connect/endsession}
+        username-claim: preferred_username
+        client-id-claim: client_id
+        groups-claim: $.role
+        audiences:
+          - camunda-webapp
+          - orchestration-api
+        scope:
+          - openid
+          - profile
+          - email
+          - orchestration-api
+
+    authorizations:
+      enabled: true
+
+    initialization:
+      defaultRoles.admin.groups:
+        - admin
+
+      roles:
+        - roleId: readonly-user
+          name: Readonly User
+          description: Read-only Operate access.
+          groups:
+            - readonly-user
+
+        - roleId: process-operator
+          name: Process Operator
+          description: Operate process instance operations without deletion.
+          groups:
+            - process-operator
+
+        - roleId: process-worker
+          name: Process Worker
+          description: Technical process automation token.
+          clients:
+            - demoapp
+
+      authorizations:
+        - ownerType: ROLE
+          ownerId: readonly-user
+          resourceType: COMPONENT
+          resourceId: operate
+          permissions:
+            - ACCESS
+        - ownerType: ROLE
+          ownerId: readonly-user
+          resourceType: PROCESS_DEFINITION
+          resourceId: "*"
+          permissions:
+            - READ_PROCESS_DEFINITION
+            - READ_PROCESS_INSTANCE
+            - READ_USER_TASK
+        - ownerType: ROLE
+          ownerId: readonly-user
+          resourceType: BATCH
+          resourceId: "*"
+          permissions:
+            - READ
+        - ownerType: ROLE
+          ownerId: readonly-user
+          resourceType: RESOURCE
+          resourceId: "*"
+          permissions:
+            - READ
+        - ownerType: ROLE
+          ownerId: readonly-user
+          resourceType: DECISION_DEFINITION
+          resourceId: "*"
+          permissions:
+            - READ_DECISION_DEFINITION
+            - READ_DECISION_INSTANCE
+        - ownerType: ROLE
+          ownerId: readonly-user
+          resourceType: DECISION_REQUIREMENTS_DEFINITION
+          resourceId: "*"
+          permissions:
+            - READ
+        - ownerType: ROLE
+          ownerId: readonly-user
+          resourceType: AUDIT_LOG
+          resourceId: "*"
+          permissions:
+            - READ
+
+        - ownerType: ROLE
+          ownerId: process-operator
+          resourceType: COMPONENT
+          resourceId: operate
+          permissions:
+            - ACCESS
+        - ownerType: ROLE
+          ownerId: process-operator
+          resourceType: PROCESS_DEFINITION
+          resourceId: "*"
+          permissions:
+            - READ_PROCESS_DEFINITION
+            - READ_PROCESS_INSTANCE
+            - READ_USER_TASK
+            - UPDATE_PROCESS_INSTANCE
+            - MODIFY_PROCESS_INSTANCE
+            - CANCEL_PROCESS_INSTANCE
+        - ownerType: ROLE
+          ownerId: process-operator
+          resourceType: BATCH
+          resourceId: "*"
+          permissions:
+            - READ
+            - CREATE_BATCH_OPERATION_CANCEL_PROCESS_INSTANCE
+            - CREATE_BATCH_OPERATION_MIGRATE_PROCESS_INSTANCE
+            - CREATE_BATCH_OPERATION_MODIFY_PROCESS_INSTANCE
+            - CREATE_BATCH_OPERATION_RESOLVE_INCIDENT
+        - ownerType: ROLE
+          ownerId: process-operator
+          resourceType: RESOURCE
+          resourceId: "*"
+          permissions:
+            - READ
+        - ownerType: ROLE
+          ownerId: process-operator
+          resourceType: DECISION_DEFINITION
+          resourceId: "*"
+          permissions:
+            - READ_DECISION_DEFINITION
+            - READ_DECISION_INSTANCE
+        - ownerType: ROLE
+          ownerId: process-operator
+          resourceType: DECISION_REQUIREMENTS_DEFINITION
+          resourceId: "*"
+          permissions:
+            - READ
+        - ownerType: ROLE
+          ownerId: process-operator
+          resourceType: AUDIT_LOG
+          resourceId: "*"
+          permissions:
+            - READ
+
+        - ownerType: ROLE
+          ownerId: process-worker
+          resourceType: RESOURCE
+          resourceId: "*"
+          permissions:
+            - CREATE
+            - READ
+        - ownerType: ROLE
+          ownerId: process-worker
+          resourceType: PROCESS_DEFINITION
+          resourceId: "*"
+          permissions:
+            - READ_PROCESS_DEFINITION
+            - READ_PROCESS_INSTANCE
+            - CREATE_PROCESS_INSTANCE
+            - UPDATE_PROCESS_INSTANCE
+            - CANCEL_PROCESS_INSTANCE
+            - CLAIM_USER_TASK
+            - COMPLETE_USER_TASK
+            - READ_USER_TASK
+            - UPDATE_USER_TASK
+        - ownerType: ROLE
+          ownerId: process-worker
+          resourceType: MESSAGE
+          resourceId: "*"
+          permissions:
+            - CREATE
+            - READ
+
+  data:
+    secondary-storage:
+      type: rdbms
+      rdbms:
+        url: ${CAMUNDA_RDBMS_URL:jdbc:sqlserver://localhost:1433;databaseName=camunda_secondary;encrypt=false}
+        username: ${CAMUNDA_RDBMS_USERNAME:camunda}
+        password: ${CAMUNDA_RDBMS_PASSWORD:Camunda123!}
+
+  mcp:
+    enabled: true

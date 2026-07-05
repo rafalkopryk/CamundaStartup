@@ -47,9 +47,7 @@ public static class Config
             RedirectUris =
             {
                 "http://localhost:8081/sso-callback",
-                "http://localhost:8081/login/oauth2/code/oidcclient",
             },
-            PostLogoutRedirectUris = { "http://localhost:8081/" },
             AllowedScopes =
             {
                 IdentityServerConstants.StandardScopes.OpenId,
@@ -129,7 +127,7 @@ public static class Config
                 new Claim(JwtClaimTypes.Email, "rafal@camunda.local"),
                 new Claim(JwtClaimTypes.EmailVerified, "true", ClaimValueTypes.Boolean),
                 new Claim(JwtClaimTypes.PreferredUserName, "rafal"),
-                new Claim(JwtClaimTypes.Role, """["dev"]""", IdentityServerConstants.ClaimValueTypes.Json),
+                new Claim(JwtClaimTypes.Role, """["readonly-user"]""", IdentityServerConstants.ClaimValueTypes.Json),
             },
         },
         new TestUser
@@ -145,7 +143,7 @@ public static class Config
                 new Claim(JwtClaimTypes.Email, "jan@camunda.local"),
                 new Claim(JwtClaimTypes.EmailVerified, "true", ClaimValueTypes.Boolean),
                 new Claim(JwtClaimTypes.PreferredUserName, "jan"),
-                new Claim(JwtClaimTypes.Role, """["operator"]""", IdentityServerConstants.ClaimValueTypes.Json),
+                new Claim(JwtClaimTypes.Role, """["process-operator"]""", IdentityServerConstants.ClaimValueTypes.Json),
             },
         },
     ];

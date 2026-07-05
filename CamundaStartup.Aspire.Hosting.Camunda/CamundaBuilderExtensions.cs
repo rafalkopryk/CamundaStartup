@@ -20,7 +20,7 @@ public static class CamundaBuilderExtensions
             .WithHttpEndpoint(port: DefaultGrpcPort, targetPort: DefaultGrpcPort, CamundaResource.GprcEndpointName)
             .WithHttpEndpoint(port: 9600, targetPort: 9600, name: "internal")
             .WithImage(CamundaContainerImageTags.Image, CamundaContainerImageTags.Tag)
-            .WithEnvironment("CAMUNDA_SECURITY_AUTHORIZATIONS_ENABLED", "true")
+            .WithEnvironment("CAMUNDA_SECURITY_AUTHORIZATIONS_ENABLED", "false")
             .WithEnvironment("CAMUNDA_DATA_SECONDARYSTORAGE_TYPE", "none")
             .WithEnvironment("ZEEBE_LOG_APPENDER", "Stackdriver")
             .WithEnvironment("OPERATE_LOG_APPENDER", "Stackdriver")
@@ -151,6 +151,7 @@ public static class CamundaBuilderExtensions
 
         builder
             .WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_METHOD", "oidc")
+            .WithEnvironment("CAMUNDA_SECURITY_AUTHORIZATIONS_ENABLED", "true")
             .WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_OIDC_CLIENTID", clientId)
             .WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_OIDC_CLIENTSECRET", clientSecret)
             .WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_OIDC_REDIRECTURI", redirectUri)
@@ -192,41 +193,89 @@ public static class CamundaBuilderExtensions
             builder.WithEnvironment($"CAMUNDA_SECURITY_AUTHENTICATION_OIDC_SCOPE_{i}", scope[i]);
         }
 
-        
         builder.WithEnvironment("CAMUNDA_SECURITY_AUTHENTICATION_OIDC_GROUPSCLAIM", groupsClaim);
 
-        builder.WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_DEFAULTROLES_ADMIN_GROUPS_0", "admin");
-        // builder.WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_DEFAULTROLES_ADMIN_CLIENTS", "demoapp");
-
-        builder.WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_TENANT_ID", "demoapp");
-        builder.WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_NAME", "demoapp");
-        builder.WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_DESCRIPTION", "demoapp");
-        builder.WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_CLIENTS", "demoapp");
-
-        
-        builder.WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_ROLES_0_ROLE_ID", "microservice");
-        builder.WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_ROLES_0_NAME", "microservice");
-        builder.WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_ROLES_0_DESCRIPTION", "microservice");
-        builder.WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_ROLES_0_CLIENTS", "demoapp");
-
-        
-
-
-        
-        // builder.WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_DESCRIPTION", "demoapp");
-        // builder.WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_CLIENTS", "demoapp");
-
-
-//         CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_TENANT_ID=tenantId
-// CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_NAME="test tenant"
-// CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_DESCRIPTION="test tenant description"
-// CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_CLIENTS='R1,R2,R3,R4'
-// CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_GROUPS='R1,R2,R3,R4'
-// CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_MAPPING_RULES='R1,R2,R3,R4'
-// CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_ROLES='R1,R2,R3,R4'
-// CAMUNDA_SECURITY_INITIALIZATION_TENANTS_0_USERS='UserA,UserB,UserC'
-        
+        ConfigureDefaultOidcAuthorizations(builder);
         
         return builder;
+    }
+
+    private static void ConfigureDefaultOidcAuthorizations(IResourceBuilder<CamundaResource> builder)
+    {
+        builder.WithEnvironment("CAMUNDA_SECURITY_INITIALIZATION_DEFAULTROLES_ADMIN_GROUPS_0", "admin");
+
+        AddRole(builder, 0, "readonly-user", "Readonly User", "Read-only Operate access.", groups: "readonly-user");
+        AddRole(builder, 1, "process-operator", "Process Operator", "Operate process instance operations without deletion.", groups: "process-operator");
+        AddRole(builder, 2, "process-worker", "Process Worker", "Technical process automation token.", clients: "demoapp");
+
+        var authorizationIndex = 0;
+
+        AddAuthorization(builder, authorizationIndex++, "ROLE", "readonly-user", "COMPONENT", "operate", "ACCESS");
+        AddAuthorization(builder, authorizationIndex++, "ROLE", "readonly-user", "PROCESS_DEFINITION", "*",
+            "READ_PROCESS_DEFINITION,READ_PROCESS_INSTANCE,READ_USER_TASK");
+        AddAuthorization(builder, authorizationIndex++, "ROLE", "readonly-user", "BATCH", "*", "READ");
+        AddAuthorization(builder, authorizationIndex++, "ROLE", "readonly-user", "RESOURCE", "*", "READ");
+        AddAuthorization(builder, authorizationIndex++, "ROLE", "readonly-user", "DECISION_DEFINITION", "*",
+            "READ_DECISION_DEFINITION,READ_DECISION_INSTANCE");
+        AddAuthorization(builder, authorizationIndex++, "ROLE", "readonly-user", "DECISION_REQUIREMENTS_DEFINITION", "*", "READ");
+        AddAuthorization(builder, authorizationIndex++, "ROLE", "readonly-user", "AUDIT_LOG", "*", "READ");
+
+        AddAuthorization(builder, authorizationIndex++, "ROLE", "process-operator", "COMPONENT", "operate", "ACCESS");
+        AddAuthorization(builder, authorizationIndex++, "ROLE", "process-operator", "PROCESS_DEFINITION", "*",
+            "READ_PROCESS_DEFINITION,READ_PROCESS_INSTANCE,READ_USER_TASK,UPDATE_PROCESS_INSTANCE,MODIFY_PROCESS_INSTANCE,CANCEL_PROCESS_INSTANCE");
+        AddAuthorization(builder, authorizationIndex++, "ROLE", "process-operator", "BATCH", "*",
+            "READ,CREATE_BATCH_OPERATION_CANCEL_PROCESS_INSTANCE,CREATE_BATCH_OPERATION_MIGRATE_PROCESS_INSTANCE,CREATE_BATCH_OPERATION_MODIFY_PROCESS_INSTANCE,CREATE_BATCH_OPERATION_RESOLVE_INCIDENT");
+        AddAuthorization(builder, authorizationIndex++, "ROLE", "process-operator", "RESOURCE", "*", "READ");
+        AddAuthorization(builder, authorizationIndex++, "ROLE", "process-operator", "DECISION_DEFINITION", "*",
+            "READ_DECISION_DEFINITION,READ_DECISION_INSTANCE");
+        AddAuthorization(builder, authorizationIndex++, "ROLE", "process-operator", "DECISION_REQUIREMENTS_DEFINITION", "*", "READ");
+        AddAuthorization(builder, authorizationIndex++, "ROLE", "process-operator", "AUDIT_LOG", "*", "READ");
+
+        AddAuthorization(builder, authorizationIndex++, "ROLE", "process-worker", "RESOURCE", "*", "CREATE,READ");
+        AddAuthorization(builder, authorizationIndex++, "ROLE", "process-worker", "PROCESS_DEFINITION", "*",
+            "READ_PROCESS_DEFINITION,READ_PROCESS_INSTANCE,CREATE_PROCESS_INSTANCE,UPDATE_PROCESS_INSTANCE,CANCEL_PROCESS_INSTANCE,CLAIM_USER_TASK,COMPLETE_USER_TASK,READ_USER_TASK,UPDATE_USER_TASK");
+        AddAuthorization(builder, authorizationIndex, "ROLE", "process-worker", "MESSAGE", "*", "CREATE,READ");
+    }
+
+    private static void AddRole(
+        IResourceBuilder<CamundaResource> builder,
+        int index,
+        string roleId,
+        string name,
+        string description,
+        string? groups = null,
+        string? clients = null)
+    {
+        builder
+            .WithEnvironment($"CAMUNDA_SECURITY_INITIALIZATION_ROLES_{index}_ROLE_ID", roleId)
+            .WithEnvironment($"CAMUNDA_SECURITY_INITIALIZATION_ROLES_{index}_NAME", name)
+            .WithEnvironment($"CAMUNDA_SECURITY_INITIALIZATION_ROLES_{index}_DESCRIPTION", description);
+
+        if (!string.IsNullOrWhiteSpace(groups))
+        {
+            builder.WithEnvironment($"CAMUNDA_SECURITY_INITIALIZATION_ROLES_{index}_GROUPS", groups);
+        }
+
+        if (!string.IsNullOrWhiteSpace(clients))
+        {
+            builder.WithEnvironment($"CAMUNDA_SECURITY_INITIALIZATION_ROLES_{index}_CLIENTS", clients);
+        }
+    }
+
+    private static void AddAuthorization(
+        IResourceBuilder<CamundaResource> builder,
+        int index,
+        string ownerType,
+        string ownerId,
+        string resourceType,
+        string resourceId,
+        string permissions)
+    {
+        builder
+            .WithEnvironment($"CAMUNDA_SECURITY_INITIALIZATION_AUTHORIZATIONS_{index}_OWNER_TYPE", ownerType)
+            .WithEnvironment($"CAMUNDA_SECURITY_INITIALIZATION_AUTHORIZATIONS_{index}_OWNER_ID", ownerId)
+            .WithEnvironment($"CAMUNDA_SECURITY_INITIALIZATION_AUTHORIZATIONS_{index}_RESOURCE_TYPE", resourceType)
+            .WithEnvironment($"CAMUNDA_SECURITY_INITIALIZATION_AUTHORIZATIONS_{index}_RESOURCE_ID", resourceId)
+            .WithEnvironment($"CAMUNDA_SECURITY_INITIALIZATION_AUTHORIZATIONS_{index}_PERMISSIONS", permissions);
     }
 }

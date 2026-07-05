@@ -63,6 +63,8 @@ builder.AddProject<Projects.Camunda_Startup_DemoApp>("DemoApp")
     .WithEnvironment("CAMUNDA_CLIENT_ID", "demoapp")
     .WithEnvironment("CAMUNDA_CLIENT_SECRET", "demoapp-secret")
     .WithEnvironment("CAMUNDA_TOKEN_AUDIENCE", "orchestration-api")
+    .WithEnvironment("CAMUNDA_OAUTH_SCOPE", "orchestration-api")
+
     // .WithEnvironment("CAMUNDA_DEFAULT_TENANT_ID", "demoapp")
     .WaitFor(camunda);
 
