@@ -1,0 +1,34 @@
+{
+  "permissions": [
+    {
+      "key": "weather-forecast.read",
+      "name": "READ",
+      "resourceType": "WEATHER_FORECAST"
+    },
+    {
+      "key": "weather-forecast.create",
+      "name": "CREATE",
+      "resourceType": "WEATHER_FORECAST"
+    },
+    {
+      "key": "application.read-own",
+      "name": "READ",
+      "resourceType": "APPLICATION"
+    },
+    {
+      "key": "application.read-all",
+      "name": "READ",
+      "resourceType": "APPLICATION"
+    },
+    {
+      "key": "application.update-own",
+      "name": "UPDATE",
+      "resourceType": "APPLICATION"
+    },
+    {
+      "key": "application.update-all",
+      "name": "UPDATE",
+      "resourceType": "APPLICATION"
+    }
+  ]
+}

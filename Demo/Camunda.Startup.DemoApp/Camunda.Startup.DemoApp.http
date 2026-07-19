@@ -1,12 +1,15 @@
 @DemoApp_HostAddress = https://localhost:7230
 @requestedDate =  2025-10-01
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6IkRlbW9BZG1pbiIsInN1YiI6IkRlbW9BZG1pbiIsImp0aSI6IjEzYTkwODAwIiwicm9sZXMiOiJ3ZWF0aGVyLWFkbWluIiwiYXVkIjpbImh0dHA6Ly9sb2NhbGhvc3Q6NTE3NyIsImh0dHBzOi8vbG9jYWxob3N0OjcyMzAiXSwibmJmIjoxNzg0Mzg1NzU0LCJleHAiOjE3OTIzMzQ1NTQsImlhdCI6MTc4NDM4NTc1NCwiaXNzIjoiZG90bmV0LXVzZXItand0cyJ9.r2BT52i97RZZfifoCGDSEnsoBvv6By7PETN0FWl1Ksg
 
 
 POST {{DemoApp_HostAddress}}/weatherforecast/{{requestedDate}}
 Content-Type: application/json
+Authorization: Bearer {{accessToken}}
 
 ###
 
 GET {{DemoApp_HostAddress}}/weatherforecast/{{requestedDate}}
+Authorization: Bearer {{accessToken}}
 
 ###

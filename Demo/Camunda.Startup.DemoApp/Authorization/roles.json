@@ -1,0 +1,95 @@
+{
+  "roles": [
+    {
+      "name": "weather-reader",
+      "permissions": [
+        "weather-forecast.read"
+      ]
+    },
+    {
+      "name": "weather-requester",
+      "permissions": [
+        "weather-forecast.create"
+      ]
+    },
+    {
+      "name": "weather-admin",
+      "permissions": [
+        "weather-forecast.read",
+        "weather-forecast.create"
+      ]
+    },
+    {
+      "name": "Analyst",
+      "permissions": [
+        "weather-forecast.read",
+        "application.read-all",
+        "application.update-all"
+      ]
+    },
+    {
+      "name": "Salesman",
+      "permissions": ["application.read-all", "application.update-all"]
+    },
+    {
+      "name": "AntiFraudAnalyst",
+      "permissions": ["application.read-all"]
+    },
+    {
+      "name": "Client",
+      "permissions": [
+        "weather-forecast.read",
+        "weather-forecast.create",
+        "application.read-own",
+        "application.update-own"
+      ]
+    },
+    {
+      "name": "ClientPos",
+      "permissions": ["weather-forecast.create"]
+    }
+  ],
+  "mappings": [
+    {
+      "key": "AnalystBO",
+      "role": "Analyst",
+      "clientIds": ["Backoffice"],
+      "scopes": ["retail-credit:analyst"],
+      "requireXnuc": true
+    },
+    {
+      "key": "AnalystOtherMilleDesk",
+      "role": "Analyst",
+      "clientIds": ["MilleDesk"],
+      "roles": ["Analyst"],
+      "requireXnuc": true
+    },
+    {
+      "key": "Salesman",
+      "role": "Salesman",
+      "scopes": ["retail-credit:salesman", "retail-credit:role:salesman"],
+      "requireXnuc": true
+    },
+    {
+      "key": "AntiFraudAnalyst",
+      "role": "AntiFraudAnalyst",
+      "scopes": ["retail-credit:antifraud-analyst"],
+      "requireXnuc": true
+    },
+    {
+      "key": "Client",
+      "role": "Client",
+      "requireCif": true,
+      "exclusiveGroup": "ClientType",
+      "priority": 0
+    },
+    {
+      "key": "ClientPOS",
+      "role": "ClientPos",
+      "clientIds": ["POS"],
+      "requireCif": true,
+      "exclusiveGroup": "ClientType",
+      "priority": 100
+    }
+  ]
+}
