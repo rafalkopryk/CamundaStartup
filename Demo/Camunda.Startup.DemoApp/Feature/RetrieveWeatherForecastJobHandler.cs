@@ -23,7 +23,7 @@ public class RetrieveWeatherForecastJobHandler(IMemoryCache memoryCache) : IJobH
             summaries[Random.Shared.Next(summaries.Length)]
         );
 
-        memoryCache.Set($"WeatherForecast-{input.RequestedDate:yyyy-MM-dd}", forecast, TimeSpan.FromMinutes(5));
+        //memoryCache.Set($"WeatherForecast-{input.RequestedDate:yyyy-MM-dd}", forecast, TimeSpan.FromMinutes(5));
 
         return Task.CompletedTask;
     }

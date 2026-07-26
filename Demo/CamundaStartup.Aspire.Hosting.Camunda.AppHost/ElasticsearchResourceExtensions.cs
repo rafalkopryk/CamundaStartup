@@ -10,5 +10,12 @@ internal static class ElasticsearchResourceExtensions
             return ReferenceExpression.Create(
                 $"http://{resource.PrimaryEndpoint.Property(EndpointProperty.Host)}:{resource.PrimaryEndpoint.Property(EndpointProperty.Port)}");
         }
+
+        public ReferenceExpression GetKibanaHostsExpression()
+        {
+            ArgumentNullException.ThrowIfNull(resource);
+            return ReferenceExpression.Create(
+                $"[\"http://{resource.PrimaryEndpoint.Property(EndpointProperty.Host)}:{resource.PrimaryEndpoint.Property(EndpointProperty.Port)}\"]");
+        }
     }
 }

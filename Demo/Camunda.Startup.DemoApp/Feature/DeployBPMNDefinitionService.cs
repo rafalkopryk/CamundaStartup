@@ -10,7 +10,7 @@ public class DeployBPMNDefinitionService(CamundaClient client, ILogger<DeployBPM
         {
             try
             {
-                var weatherForecastDefinition = "weather-forecast2.bpmn";
+                var weatherForecastDefinition = "weather-forecast.bpmn";
 
                 var file = await File.ReadAllBytesAsync(weatherForecastDefinition, stoppingToken);
 

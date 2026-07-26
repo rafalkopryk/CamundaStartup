@@ -1,69 +1,240 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_0tbc336" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.43.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.9.0">
-  <bpmn:process id="weather-forecast" name="Weather forecast" isExecutable="true">
-    <bpmn:userTask id="Activity_UserTask1">
-      <bpmn:extensionElements>
-        <zeebe:userTask />
-      </bpmn:extensionElements>
-      <bpmn:incoming>Flow_1d7jzxq</bpmn:incoming>
-      <bpmn:outgoing>Flow_0kwg75v</bpmn:outgoing>
-    </bpmn:userTask>
-    <bpmn:endEvent id="Event_WeatherForecastRetrieved">
-      <bpmn:incoming>Flow_0kwg75v</bpmn:incoming>
-    </bpmn:endEvent>
-    <bpmn:sequenceFlow id="Flow_0kwg75v" sourceRef="Activity_UserTask1" targetRef="Event_WeatherForecastRetrieved" />
-    <bpmn:sequenceFlow id="Flow_0uo4vxq" sourceRef="StartEvent_WeatherForecastRequestReceived" targetRef="Activity_RetrieveWeatherForecast" />
-    <bpmn:sequenceFlow id="Flow_1d7jzxq" sourceRef="Activity_RetrieveWeatherForecast" targetRef="Activity_UserTask1" />
-    <bpmn:serviceTask id="Activity_RetrieveWeatherForecast" name="Retrieve Weather forecast">
-      <bpmn:extensionElements>
-        <zeebe:taskDefinition type="weather-forecast-retrieve:1" />
-      </bpmn:extensionElements>
-      <bpmn:incoming>Flow_0uo4vxq</bpmn:incoming>
-      <bpmn:outgoing>Flow_1d7jzxq</bpmn:outgoing>
-    </bpmn:serviceTask>
-    <bpmn:startEvent id="StartEvent_WeatherForecastRequestReceived" name="Weather Forecast Request Received">
-      <bpmn:outgoing>Flow_0uo4vxq</bpmn:outgoing>
-      <bpmn:messageEventDefinition id="MessageEventDefinition_0kbit3r" messageRef="Message_34jv7aj" />
+<bpmn:definitions
+  xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+  xmlns:zeebe="http://camunda.org/schema/zeebe/1.0"
+  xmlns:modeler="http://camunda.org/schema/modeler/1.0"
+  id="Definitions_WeatherForecastSizing"
+  targetNamespace="http://camunda-startup/weather-forecast"
+  exporter="Camunda Modeler"
+  exporterVersion="5.43.0"
+  modeler:executionPlatform="Camunda Cloud"
+  modeler:executionPlatformVersion="8.9.0">
+
+  <bpmn:collaboration id="Collaboration_WeatherForecastSizing">
+    <bpmn:participant id="Participant_Parent" name="Weather forecast sizing process" processRef="weather-forecast" />
+    <bpmn:participant id="Participant_Collect" name="Called process 1 — Collect" processRef="weather-forecast-collect" />
+    <bpmn:participant id="Participant_Validate" name="Called process 2 — Validate" processRef="weather-forecast-validate" />
+    <bpmn:participant id="Participant_Deliver" name="Called process 3 — Deliver" processRef="weather-forecast-deliver" />
+  </bpmn:collaboration>
+
+  <!-- One top-level process orchestrates three independently measurable stages. -->
+  <bpmn:process id="weather-forecast" name="Weather forecast sizing process" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_RequestReceived" name="Request received">
+      <bpmn:outgoing>Flow_Parent_1</bpmn:outgoing>
     </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_Parent_1" sourceRef="StartEvent_RequestReceived" targetRef="CallActivity_Collect" />
+    <bpmn:callActivity id="CallActivity_Collect" name="1. Collect forecast">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="weather-forecast-collect" bindingType="latest" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Parent_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_Parent_2</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:sequenceFlow id="Flow_Parent_2" sourceRef="CallActivity_Collect" targetRef="CallActivity_Validate" />
+    <bpmn:callActivity id="CallActivity_Validate" name="2. Validate forecast">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="weather-forecast-validate" bindingType="latest" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Parent_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_Parent_3</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:sequenceFlow id="Flow_Parent_3" sourceRef="CallActivity_Validate" targetRef="CallActivity_Deliver" />
+    <bpmn:callActivity id="CallActivity_Deliver" name="3. Deliver forecast">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="weather-forecast-deliver" bindingType="latest" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Parent_3</bpmn:incoming>
+      <bpmn:outgoing>Flow_Parent_4</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:sequenceFlow id="Flow_Parent_4" sourceRef="CallActivity_Deliver" targetRef="EndEvent_Complete" />
+    <bpmn:endEvent id="EndEvent_Complete" name="Forecast completed">
+      <bpmn:incoming>Flow_Parent_4</bpmn:incoming>
+    </bpmn:endEvent>
   </bpmn:process>
-  <bpmn:message id="Message_34jv7aj" name="Message_WeatherForecastRequestReceived" />
-  <bpmn:message id="Message_3pnkh0q" name="Message_Event1">
+
+  <bpmn:process id="weather-forecast-collect" name="Collect forecast" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_Collect"><bpmn:outgoing>Flow_Collect_1</bpmn:outgoing></bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_Collect_1" sourceRef="StartEvent_Collect" targetRef="ServiceTask_Retrieve" />
+    <bpmn:serviceTask id="ServiceTask_Retrieve" name="Retrieve weather data">
+      <bpmn:extensionElements><zeebe:taskDefinition type="weather-forecast-retrieve:1" retries="10" /></bpmn:extensionElements>
+      <bpmn:incoming>Flow_Collect_1</bpmn:incoming><bpmn:outgoing>Flow_Collect_2</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_Collect_2" sourceRef="ServiceTask_Retrieve" targetRef="UserTask_ReviewSource" />
+    <bpmn:userTask id="UserTask_ReviewSource" name="Review forecast source">
+      <bpmn:extensionElements><zeebe:userTask /></bpmn:extensionElements>
+      <bpmn:incoming>Flow_Collect_2</bpmn:incoming><bpmn:outgoing>Flow_Collect_3</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_Collect_3" sourceRef="UserTask_ReviewSource" targetRef="ServiceTask_ReleaseCollect" />
+    <bpmn:serviceTask id="ServiceTask_ReleaseCollect" name="Release collection stage">
+      <bpmn:extensionElements><zeebe:taskDefinition type="weather-forecast-release-stage:1" retries="10" /></bpmn:extensionElements>
+      <bpmn:incoming>Flow_Collect_3</bpmn:incoming><bpmn:outgoing>Flow_Collect_4</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_Collect_4" sourceRef="ServiceTask_ReleaseCollect" targetRef="ReceiveTask_Collect" />
+    <bpmn:receiveTask id="ReceiveTask_Collect" name="Await collection release" messageRef="Message_ContinueWeatherForecast">
+      <bpmn:incoming>Flow_Collect_4</bpmn:incoming><bpmn:outgoing>Flow_Collect_5</bpmn:outgoing>
+    </bpmn:receiveTask>
+    <bpmn:sequenceFlow id="Flow_Collect_5" sourceRef="ReceiveTask_Collect" targetRef="EndEvent_Collect" />
+    <bpmn:endEvent id="EndEvent_Collect"><bpmn:incoming>Flow_Collect_5</bpmn:incoming></bpmn:endEvent>
+  </bpmn:process>
+
+  <bpmn:process id="weather-forecast-validate" name="Validate forecast" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_Validate"><bpmn:outgoing>Flow_Validate_1</bpmn:outgoing></bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_Validate_1" sourceRef="StartEvent_Validate" targetRef="ServiceTask_Validate" />
+    <bpmn:serviceTask id="ServiceTask_Validate" name="Validate forecast">
+      <bpmn:extensionElements><zeebe:taskDefinition type="weather-forecast-retrieve:1" retries="10" /></bpmn:extensionElements>
+      <bpmn:incoming>Flow_Validate_1</bpmn:incoming><bpmn:outgoing>Flow_Validate_2</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_Validate_2" sourceRef="ServiceTask_Validate" targetRef="UserTask_Approve" />
+    <bpmn:userTask id="UserTask_Approve" name="Approve forecast">
+      <bpmn:extensionElements><zeebe:userTask /></bpmn:extensionElements>
+      <bpmn:incoming>Flow_Validate_2</bpmn:incoming><bpmn:outgoing>Flow_Validate_3</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_Validate_3" sourceRef="UserTask_Approve" targetRef="ServiceTask_ReleaseValidate" />
+    <bpmn:serviceTask id="ServiceTask_ReleaseValidate" name="Release validation stage">
+      <bpmn:extensionElements><zeebe:taskDefinition type="weather-forecast-release-stage:1" retries="10" /></bpmn:extensionElements>
+      <bpmn:incoming>Flow_Validate_3</bpmn:incoming><bpmn:outgoing>Flow_Validate_4</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_Validate_4" sourceRef="ServiceTask_ReleaseValidate" targetRef="ReceiveTask_Validate" />
+    <bpmn:receiveTask id="ReceiveTask_Validate" name="Await validation release" messageRef="Message_ContinueWeatherForecast">
+      <bpmn:incoming>Flow_Validate_4</bpmn:incoming><bpmn:outgoing>Flow_Validate_5</bpmn:outgoing>
+    </bpmn:receiveTask>
+    <bpmn:sequenceFlow id="Flow_Validate_5" sourceRef="ReceiveTask_Validate" targetRef="EndEvent_Validate" />
+    <bpmn:endEvent id="EndEvent_Validate"><bpmn:incoming>Flow_Validate_5</bpmn:incoming></bpmn:endEvent>
+  </bpmn:process>
+
+  <bpmn:process id="weather-forecast-deliver" name="Deliver forecast" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_Deliver"><bpmn:outgoing>Flow_Deliver_1</bpmn:outgoing></bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_Deliver_1" sourceRef="StartEvent_Deliver" targetRef="ServiceTask_Notify" />
+    <bpmn:serviceTask id="ServiceTask_Notify" name="Send notification">
+      <bpmn:extensionElements><zeebe:taskDefinition type="send-notification:1" retries="10" /></bpmn:extensionElements>
+      <bpmn:incoming>Flow_Deliver_1</bpmn:incoming><bpmn:outgoing>Flow_Deliver_2</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_Deliver_2" sourceRef="ServiceTask_Notify" targetRef="UserTask_ConfirmDelivery" />
+    <bpmn:userTask id="UserTask_ConfirmDelivery" name="Confirm delivery">
+      <bpmn:extensionElements><zeebe:userTask /></bpmn:extensionElements>
+      <bpmn:incoming>Flow_Deliver_2</bpmn:incoming><bpmn:outgoing>Flow_Deliver_3</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_Deliver_3" sourceRef="UserTask_ConfirmDelivery" targetRef="ServiceTask_ReleaseDeliver" />
+    <bpmn:serviceTask id="ServiceTask_ReleaseDeliver" name="Release delivery stage">
+      <bpmn:extensionElements><zeebe:taskDefinition type="weather-forecast-release-stage:1" retries="10" /></bpmn:extensionElements>
+      <bpmn:incoming>Flow_Deliver_3</bpmn:incoming><bpmn:outgoing>Flow_Deliver_4</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_Deliver_4" sourceRef="ServiceTask_ReleaseDeliver" targetRef="ReceiveTask_Deliver" />
+    <bpmn:receiveTask id="ReceiveTask_Deliver" name="Await delivery release" messageRef="Message_ContinueWeatherForecast">
+      <bpmn:incoming>Flow_Deliver_4</bpmn:incoming><bpmn:outgoing>Flow_Deliver_5</bpmn:outgoing>
+    </bpmn:receiveTask>
+    <bpmn:sequenceFlow id="Flow_Deliver_5" sourceRef="ReceiveTask_Deliver" targetRef="ServiceTask_Complete" />
+    <bpmn:serviceTask id="ServiceTask_Complete" name="Record completion">
+      <bpmn:extensionElements><zeebe:taskDefinition type="weather-forecast-complete:1" retries="10" /></bpmn:extensionElements>
+      <bpmn:incoming>Flow_Deliver_5</bpmn:incoming><bpmn:outgoing>Flow_Deliver_6</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_Deliver_6" sourceRef="ServiceTask_Complete" targetRef="EndEvent_Deliver" />
+    <bpmn:endEvent id="EndEvent_Deliver"><bpmn:incoming>Flow_Deliver_6</bpmn:incoming></bpmn:endEvent>
+  </bpmn:process>
+
+  <bpmn:message id="Message_ContinueWeatherForecast" name="Message_ContinueWeatherForecast">
     <bpmn:extensionElements>
-      <zeebe:subscription correlationKey="=processId" />
+      <zeebe:subscription correlationKey="=instanceId" />
     </bpmn:extensionElements>
   </bpmn:message>
-  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
-    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="weather-forecast">
-      <bpmndi:BPMNShape id="Event_1quui85_di" bpmnElement="Event_WeatherForecastRetrieved">
-        <dc:Bounds x="812" y="102" width="36" height="36" />
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_WeatherForecastSizing">
+    <bpmndi:BPMNPlane id="BPMNPlane_WeatherForecastSizing" bpmnElement="Collaboration_WeatherForecastSizing">
+      <bpmndi:BPMNShape id="Participant_Parent_di" bpmnElement="Participant_Parent" isHorizontal="true">
+        <dc:Bounds x="30" y="30" width="1040" height="160" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_0f5p8ev_di" bpmnElement="StartEvent_WeatherForecastRequestReceived">
-        <dc:Bounds x="182" y="102" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="155" y="145" width="90" height="27" />
-        </bpmndi:BPMNLabel>
+      <bpmndi:BPMNShape id="Participant_Collect_di" bpmnElement="Participant_Collect" isHorizontal="true">
+        <dc:Bounds x="30" y="220" width="1040" height="160" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_1jj8mvr_di" bpmnElement="Activity_RetrieveWeatherForecast">
-        <dc:Bounds x="290" y="80" width="100" height="80" />
-        <bpmndi:BPMNLabel />
+      <bpmndi:BPMNShape id="Participant_Validate_di" bpmnElement="Participant_Validate" isHorizontal="true">
+        <dc:Bounds x="30" y="410" width="1040" height="160" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_0e7au31_di" bpmnElement="Activity_UserTask1">
-        <dc:Bounds x="490" y="80" width="100" height="80" />
+      <bpmndi:BPMNShape id="Participant_Deliver_di" bpmnElement="Participant_Deliver" isHorizontal="true">
+        <dc:Bounds x="30" y="600" width="1040" height="160" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="Flow_1d7jzxq_di" bpmnElement="Flow_1d7jzxq">
-        <di:waypoint x="390" y="120" />
-        <di:waypoint x="490" y="120" />
+
+      <bpmndi:BPMNShape id="StartEvent_RequestReceived_di" bpmnElement="StartEvent_RequestReceived">
+        <dc:Bounds x="120" y="92" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="98" y="135" width="80" height="27" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="CallActivity_Collect_di" bpmnElement="CallActivity_Collect">
+        <dc:Bounds x="230" y="70" width="130" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="CallActivity_Validate_di" bpmnElement="CallActivity_Validate">
+        <dc:Bounds x="430" y="70" width="130" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="CallActivity_Deliver_di" bpmnElement="CallActivity_Deliver">
+        <dc:Bounds x="630" y="70" width="130" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Complete_di" bpmnElement="EndEvent_Complete">
+        <dc:Bounds x="850" y="92" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="822" y="135" width="92" height="27" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_Parent_1_di" bpmnElement="Flow_Parent_1">
+        <di:waypoint x="156" y="110" /><di:waypoint x="230" y="110" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0uo4vxq_di" bpmnElement="Flow_0uo4vxq">
-        <di:waypoint x="218" y="120" />
-        <di:waypoint x="290" y="120" />
+      <bpmndi:BPMNEdge id="Flow_Parent_2_di" bpmnElement="Flow_Parent_2">
+        <di:waypoint x="360" y="110" /><di:waypoint x="430" y="110" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0kwg75v_di" bpmnElement="Flow_0kwg75v">
-        <di:waypoint x="590" y="110" />
-        <di:waypoint x="701" y="110" />
-        <di:waypoint x="701" y="120" />
-        <di:waypoint x="812" y="120" />
+      <bpmndi:BPMNEdge id="Flow_Parent_3_di" bpmnElement="Flow_Parent_3">
+        <di:waypoint x="560" y="110" /><di:waypoint x="630" y="110" />
       </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Parent_4_di" bpmnElement="Flow_Parent_4">
+        <di:waypoint x="760" y="110" /><di:waypoint x="850" y="110" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNShape id="StartEvent_Collect_di" bpmnElement="StartEvent_Collect">
+        <dc:Bounds x="120" y="282" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_Retrieve_di" bpmnElement="ServiceTask_Retrieve">
+        <dc:Bounds x="190" y="260" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_ReviewSource_di" bpmnElement="UserTask_ReviewSource">
+        <dc:Bounds x="350" y="260" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_ReleaseCollect_di" bpmnElement="ServiceTask_ReleaseCollect">
+        <dc:Bounds x="510" y="260" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ReceiveTask_Collect_di" bpmnElement="ReceiveTask_Collect">
+        <dc:Bounds x="670" y="260" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Collect_di" bpmnElement="EndEvent_Collect">
+        <dc:Bounds x="840" y="282" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_Collect_1_di" bpmnElement="Flow_Collect_1"><di:waypoint x="156" y="300" /><di:waypoint x="190" y="300" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Collect_2_di" bpmnElement="Flow_Collect_2"><di:waypoint x="310" y="300" /><di:waypoint x="350" y="300" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Collect_3_di" bpmnElement="Flow_Collect_3"><di:waypoint x="470" y="300" /><di:waypoint x="510" y="300" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Collect_4_di" bpmnElement="Flow_Collect_4"><di:waypoint x="630" y="300" /><di:waypoint x="670" y="300" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Collect_5_di" bpmnElement="Flow_Collect_5"><di:waypoint x="790" y="300" /><di:waypoint x="840" y="300" /></bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNShape id="StartEvent_Validate_di" bpmnElement="StartEvent_Validate"><dc:Bounds x="120" y="472" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_Validate_di" bpmnElement="ServiceTask_Validate"><dc:Bounds x="190" y="450" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_Approve_di" bpmnElement="UserTask_Approve"><dc:Bounds x="350" y="450" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_ReleaseValidate_di" bpmnElement="ServiceTask_ReleaseValidate"><dc:Bounds x="510" y="450" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ReceiveTask_Validate_di" bpmnElement="ReceiveTask_Validate"><dc:Bounds x="670" y="450" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Validate_di" bpmnElement="EndEvent_Validate"><dc:Bounds x="840" y="472" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_Validate_1_di" bpmnElement="Flow_Validate_1"><di:waypoint x="156" y="490" /><di:waypoint x="190" y="490" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Validate_2_di" bpmnElement="Flow_Validate_2"><di:waypoint x="310" y="490" /><di:waypoint x="350" y="490" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Validate_3_di" bpmnElement="Flow_Validate_3"><di:waypoint x="470" y="490" /><di:waypoint x="510" y="490" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Validate_4_di" bpmnElement="Flow_Validate_4"><di:waypoint x="630" y="490" /><di:waypoint x="670" y="490" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Validate_5_di" bpmnElement="Flow_Validate_5"><di:waypoint x="790" y="490" /><di:waypoint x="840" y="490" /></bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNShape id="StartEvent_Deliver_di" bpmnElement="StartEvent_Deliver"><dc:Bounds x="90" y="662" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_Notify_di" bpmnElement="ServiceTask_Notify"><dc:Bounds x="150" y="640" width="110" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_ConfirmDelivery_di" bpmnElement="UserTask_ConfirmDelivery"><dc:Bounds x="290" y="640" width="110" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_ReleaseDeliver_di" bpmnElement="ServiceTask_ReleaseDeliver"><dc:Bounds x="430" y="640" width="110" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ReceiveTask_Deliver_di" bpmnElement="ReceiveTask_Deliver"><dc:Bounds x="570" y="640" width="110" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_Complete_di" bpmnElement="ServiceTask_Complete"><dc:Bounds x="710" y="640" width="110" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Deliver_di" bpmnElement="EndEvent_Deliver"><dc:Bounds x="850" y="662" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_Deliver_1_di" bpmnElement="Flow_Deliver_1"><di:waypoint x="126" y="680" /><di:waypoint x="150" y="680" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Deliver_2_di" bpmnElement="Flow_Deliver_2"><di:waypoint x="260" y="680" /><di:waypoint x="290" y="680" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Deliver_3_di" bpmnElement="Flow_Deliver_3"><di:waypoint x="400" y="680" /><di:waypoint x="430" y="680" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Deliver_4_di" bpmnElement="Flow_Deliver_4"><di:waypoint x="540" y="680" /><di:waypoint x="570" y="680" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Deliver_5_di" bpmnElement="Flow_Deliver_5"><di:waypoint x="680" y="680" /><di:waypoint x="710" y="680" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Deliver_6_di" bpmnElement="Flow_Deliver_6"><di:waypoint x="820" y="680" /><di:waypoint x="850" y="680" /></bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>

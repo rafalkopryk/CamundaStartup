@@ -48,6 +48,30 @@ public static class CamundaBuilderExtensions
         builder.WithEnvironment("CAMUNDA_DATA_SECONDARYSTORAGE_ELASTICSEARCH_CLUSTERNAME", "elasticsearch");
         builder.WithEnvironment("CAMUNDA_DATA_SECONDARYSTORAGE_ELASTICSEARCH_URL", builder.Resource.CamundaDatabaseConnectionStringExpression);
         builder.WithEnvironment("CAMUNDA_DATA_SECONDARYSTORAGE_ELASTICSEARCH_NUMBEROFREPLICAS", "0");
+
+        return builder.WithElasticExporter(elasticConnectionString);
+    }
+
+    public static IResourceBuilder<CamundaResource> WithElasticExporter(
+        this IResourceBuilder<CamundaResource> builder,
+        ReferenceExpression elasticConnectionString)
+    {
+        ArgumentNullException.ThrowIfNull(elasticConnectionString);
+
+        // Optimize imports its event stream from the legacy Zeebe Elasticsearch exporter.
+        builder.WithEnvironment(
+            "ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_CLASSNAME",
+            "io.camunda.zeebe.exporter.ElasticsearchExporter");
+        builder.WithEnvironment(
+            "ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_ARGS_URL",
+            elasticConnectionString);
+        builder.WithEnvironment("ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_ARGS_BULK_DELAY", "1");
+        builder.WithEnvironment("ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_ARGS_INDEX_PREFIX", "zeebe-record");
+        builder.WithEnvironment("ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_ARGS_RETENTION_ENABLED", "true");
+        builder.WithEnvironment("ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_ARGS_RETENTION_MINIMUMAGE", "30m");
+        builder.WithEnvironment(
+            "ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_ARGS_INDEX_OPTIMIZEMODEENABLED",
+            "true");
         
         return builder;
     }
