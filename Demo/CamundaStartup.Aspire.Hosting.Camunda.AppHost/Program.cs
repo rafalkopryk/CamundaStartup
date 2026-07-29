@@ -5,9 +5,13 @@ var builder = DistributedApplication.CreateBuilder(args);
 const string ElasticStackVersion = "8.19.17";
 
 var storageType = await builder.AddParameter("secondaryStorage").Resource.GetValueAsync(CancellationToken.None);
-var camundaDataVolume = storageType == "postgres"
-    ? "camunda-postgres"
-    : "Camunda";
+var camundaDataVolume  = storageType switch
+{
+    "postgres" => "camunda-postgres",
+    "sqlserver" => "camunda",
+    "elastic" => "camunda-elastic",
+    _ => "camunda-h2",
+};
 
 var camunda = builder.AddCamunda("camunda", 8080)
     .WithDataVolume(camundaDataVolume)
@@ -40,6 +44,10 @@ if (dependency is not null)
 
 builder.AddProject<Projects.Camunda_Startup_DemoApp>("DemoApp")
     .WithReference(camunda, "camunda")
+    .WithEnvironment("CAMUNDA_SDK_BACKPRESSURE_PROFILE", "CONSERVATIVE")
+    .WithEnvironment("CAMUNDA_SDK_HTTP_RETRY_MAX_ATTEMPTS", "6")
+    .WithEnvironment("CAMUNDA_SDK_HTTP_RETRY_BASE_DELAY_MS", "250")
+    .WithEnvironment("CAMUNDA_SDK_HTTP_RETRY_MAX_DELAY_MS", "5000")
     .WaitFor(camunda);
 
 builder.Build().Run();
@@ -50,7 +58,8 @@ IResourceBuilder<IResource> ConfigurePostgres()
 {
     var postgres = builder.AddPostgres("postgres")
         .WithDataVolume("camunda-postgres-db")
-        .WithLifetime(ContainerLifetime.Persistent);
+        .WithLifetime(ContainerLifetime.Persistent)
+        .WithPgAdmin();
 
     var database = postgres.AddDatabase("camunda-database", "camunda");
 

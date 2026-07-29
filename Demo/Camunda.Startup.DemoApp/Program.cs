@@ -35,7 +35,7 @@ app.CreateJobWorker<RetrieveWeatherForecastJobHandler>(new JobWorkerConfig
     JobTimeoutMs = 30_000,
     PollTimeoutMs = 5_000,
     MaxConcurrentJobs = workerConcurrency,
-    PollIntervalMs = 50,
+    PollIntervalMs = 75,
 });
 
 app.CreateJobWorker<SendNotificationJobHandler>(new JobWorkerConfig
@@ -44,7 +44,7 @@ app.CreateJobWorker<SendNotificationJobHandler>(new JobWorkerConfig
     JobTimeoutMs = 30_000,
     PollTimeoutMs = 5_000,
     MaxConcurrentJobs = workerConcurrency,
-    PollIntervalMs = 50,
+    PollIntervalMs = 75,
 });
 
 app.CreateJobWorker<ReleaseForecastStageJobHandler>(new JobWorkerConfig
@@ -53,7 +53,7 @@ app.CreateJobWorker<ReleaseForecastStageJobHandler>(new JobWorkerConfig
     JobTimeoutMs = 30_000,
     PollTimeoutMs = 5_000,
     MaxConcurrentJobs = workerConcurrency,
-    PollIntervalMs = 50,
+    PollIntervalMs = 75,
 });
 
 app.CreateJobWorker<CompleteForecastJobHandler>(new JobWorkerConfig
@@ -62,7 +62,7 @@ app.CreateJobWorker<CompleteForecastJobHandler>(new JobWorkerConfig
     JobTimeoutMs = 30_000,
     PollTimeoutMs = 5_000,
     MaxConcurrentJobs = workerConcurrency,
-    PollIntervalMs = 50,
+    PollIntervalMs = 75,
 });
 
 app.MapDefaultEndpoints();

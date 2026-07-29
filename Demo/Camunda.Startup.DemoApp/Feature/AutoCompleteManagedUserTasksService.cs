@@ -6,26 +6,18 @@ namespace Camunda.Startup.DemoApp.Feature;
 
 /// <summary>
 /// Simulates users during unattended load tests while retaining Camunda-managed user tasks.
-/// Only tasks belonging to the weather sizing process definitions are completed.
+/// Completes all created user tasks.
 /// </summary>
 public sealed class AutoCompleteManagedUserTasksService : BackgroundService
 {
     private readonly CamundaClient client;
     private readonly ILogger<AutoCompleteManagedUserTasksService> logger;
     private readonly int completionConcurrency;
-    private readonly SemaphoreSlim completionSlots;
     private readonly ConcurrentDictionary<string, DateTimeOffset> recentlyHandledTasks = new();
-    private readonly ConcurrentDictionary<string, EndCursor> searchCursors = new();
+    private EndCursor? searchCursor;
 
     private static readonly TimeSpan HandledTaskRetention = TimeSpan.FromMinutes(5);
-    private const int PageSize = 100;
-
-    private static readonly string[] ProcessDefinitionIds =
-    [
-        "weather-forecast-collect",
-        "weather-forecast-validate",
-        "weather-forecast-deliver",
-    ];
+    private const int PageSize = 50;
 
     public AutoCompleteManagedUserTasksService(
         IConfiguration configuration,
@@ -33,7 +25,6 @@ public sealed class AutoCompleteManagedUserTasksService : BackgroundService
         ILogger<AutoCompleteManagedUserTasksService> logger)
     {
         completionConcurrency = configuration.GetValue("LoadTest:UserTaskCompletionConcurrency", 3);
-        completionSlots = new SemaphoreSlim(completionConcurrency, completionConcurrency);
         this.client = client;
         this.logger = logger;
     }
@@ -46,11 +37,10 @@ public sealed class AutoCompleteManagedUserTasksService : BackgroundService
             {
                 RemoveExpiredHandledTasks();
 
-                var completed = await Task.WhenAll(ProcessDefinitionIds.Select(processDefinitionId =>
-                    CompleteCreatedTasks(processDefinitionId, stoppingToken)));
+                var completed = await CompleteCreatedTasks(stoppingToken);
 
-                if (completed.Sum() == 0)
-                    await Task.Delay(500, stoppingToken);
+                if (completed == 0)
+                    await Task.Delay(5000, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -64,9 +54,9 @@ public sealed class AutoCompleteManagedUserTasksService : BackgroundService
         }
     }
 
-    private async Task<int> CompleteCreatedTasks(string processDefinitionId, CancellationToken ct)
+    private async Task<int> CompleteCreatedTasks(CancellationToken ct)
     {
-        SearchQueryPageRequest page = searchCursors.TryGetValue(processDefinitionId, out var cursor)
+        SearchQueryPageRequest page = searchCursor is { } cursor
             ? new CursorForwardPagination
             {
                 After = cursor,
@@ -92,7 +82,6 @@ public sealed class AutoCompleteManagedUserTasksService : BackgroundService
                 ],
                 Filter = new UserTaskFilter
                 {
-                    ProcessDefinitionId = ProcessDefinitionId.AssumeExists(processDefinitionId),
                     State = new UserTaskStateFilterProperty
                     {
                         Eq = UserTaskStateEnum.CREATED
@@ -103,10 +92,8 @@ public sealed class AutoCompleteManagedUserTasksService : BackgroundService
         }
         catch (Camunda.Orchestration.Sdk.HttpSdkException ex) when (ex.Status >= 500)
         {
-            searchCursors.TryRemove(processDefinitionId, out _);
-            logger.LogWarning(
-                "User task search failed for {ProcessDefinitionId}; resetting its search cursor",
-                processDefinitionId);
+            searchCursor = null;
+            logger.LogWarning("User task search failed; resetting the search cursor");
             await Task.Delay(TimeSpan.FromSeconds(1), ct);
             return 0;
         }
@@ -115,39 +102,41 @@ public sealed class AutoCompleteManagedUserTasksService : BackgroundService
 
         try
         {
-            await Task.WhenAll(response.Items.Select(async task =>
-            {
-                var taskKey = task.UserTaskKey.ToString();
-                if (recentlyHandledTasks.ContainsKey(taskKey))
-                    return;
+            await Parallel.ForEachAsync(
+                response.Items,
+                new ParallelOptions
+                {
+                    CancellationToken = ct,
+                    MaxDegreeOfParallelism = completionConcurrency,
+                },
+                async (task, taskCancellationToken) =>
+                {
+                    var taskKey = task.UserTaskKey.ToString();
+                    if (recentlyHandledTasks.ContainsKey(taskKey))
+                        return;
 
-                await completionSlots.WaitAsync(ct);
-                try
-                {
-                    await Task.Delay(15, ct);
+                    await Task.Delay(15, taskCancellationToken);
 
-                    await client.CompleteUserTaskAsync(
-                        task.UserTaskKey,
-                        new UserTaskCompletionRequest(),
-                        ct);
-                    RememberHandledTask(taskKey);
-                    Interlocked.Increment(ref handled);
-                }
-                catch (Camunda.Orchestration.Sdk.HttpSdkException ex) when (ex.Status is 404 or 409)
-                {
-                    // Secondary storage may still expose a task that was already completed.
-                    RememberHandledTask(taskKey);
-                }
-                finally
-                {
-                    completionSlots.Release();
-                }
-            }));
+                    try
+                    {
+                        await client.CompleteUserTaskAsync(
+                            task.UserTaskKey,
+                            new UserTaskCompletionRequest(),
+                            taskCancellationToken);
+                        RememberHandledTask(taskKey);
+                        Interlocked.Increment(ref handled);
+                    }
+                    catch (Camunda.Orchestration.Sdk.HttpSdkException ex) when (ex.Status is 404 or 409)
+                    {
+                        // Secondary storage may still expose a task that was already completed.
+                        RememberHandledTask(taskKey);
+                    }
+                });
 
             if (response.Page.HasMoreTotalItems && response.Page.EndCursor is { } endCursor)
-                searchCursors[processDefinitionId] = endCursor;
+                searchCursor = endCursor;
             else
-                searchCursors.TryRemove(processDefinitionId, out _);
+                searchCursor = null;
         }
         catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Conflict)
         {

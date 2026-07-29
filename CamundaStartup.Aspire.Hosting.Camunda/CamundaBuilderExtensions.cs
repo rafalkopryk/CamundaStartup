@@ -48,6 +48,7 @@ public static class CamundaBuilderExtensions
         builder.WithEnvironment("CAMUNDA_DATA_SECONDARYSTORAGE_ELASTICSEARCH_CLUSTERNAME", "elasticsearch");
         builder.WithEnvironment("CAMUNDA_DATA_SECONDARYSTORAGE_ELASTICSEARCH_URL", builder.Resource.CamundaDatabaseConnectionStringExpression);
         builder.WithEnvironment("CAMUNDA_DATA_SECONDARYSTORAGE_ELASTICSEARCH_NUMBEROFREPLICAS", "0");
+        builder.WithEnvironment("CAMUNDA_DATA_SECONDARYSTORAGE_ELASTICSEARCH_BULK_DELAY", "1s");
 
         return builder.WithElasticExporter(elasticConnectionString);
     }
