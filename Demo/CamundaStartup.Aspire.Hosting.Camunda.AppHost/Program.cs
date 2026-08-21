@@ -64,8 +64,7 @@ IResourceBuilder<IResource> ConfigureElastic()
     var elastic = builder.AddElasticsearch("elasticsearch")
         .WithEnvironment("xpack.security.enabled", "false")
         .WithDataVolume("elastic")
-        .WithLifetime(ContainerLifetime.Persistent)
-        .WithElasticvue();
+        .WithLifetime(ContainerLifetime.Persistent);
 
     camunda.WithElasticDatabase(elastic.Resource.GetConnectionStringExpressionWithoutCredentials());
 
