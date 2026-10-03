@@ -1,4 +1,4 @@
-<Project Sdk="Aspire.AppHost.Sdk/13.5.2">
+<Project Sdk="Aspire.AppHost.Sdk/13.6.0">
   
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -9,13 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Dotnet" Version="13.6.0-preview.1.26479.8" />
     <PackageReference Include="Aspire.Hosting.Elasticsearch" Version="13.3.0" />
-    <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="13.5.2" />
-    <PackageReference Include="Aspire.Hosting.SqlServer" Version="13.5.2" />
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="13.6.0" />
+    <PackageReference Include="Aspire.Hosting.SqlServer" Version="13.6.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Camunda.Startup.DemoApp\Camunda.Startup.DemoApp.csproj" />
     <ProjectReference Include="..\..\CamundaStartup.Aspire.Hosting.Camunda\CamundaStartup.Aspire.Hosting.Camunda.csproj" IsAspireProjectResource="false" />
   </ItemGroup>
 

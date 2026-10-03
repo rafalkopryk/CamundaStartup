@@ -19,7 +19,7 @@ var dependency = storageType switch
 if (dependency is not null)
     camunda.WaitFor(dependency);
 
-builder.AddProject<Projects.Camunda_Startup_DemoApp>("DemoApp")
+builder.AddDotnetProject("DemoApp", "../Camunda.Startup.DemoApp/Camunda.Startup.DemoApp.csproj")
     .WithReference(camunda, "camunda")
     .WaitFor(camunda);
 
