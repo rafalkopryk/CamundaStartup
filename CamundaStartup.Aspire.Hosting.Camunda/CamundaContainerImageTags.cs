@@ -4,5 +4,5 @@ internal static class CamundaContainerImageTags
 {
     public const string Image = "camunda/camunda";
 
-    public const string Tag = "8.10.0";
+    public const string Tag = "8.10.4";
 }

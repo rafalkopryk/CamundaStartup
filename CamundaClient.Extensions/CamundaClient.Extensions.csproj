@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Camunda.Orchestration.Sdk" Version="10.*-*" />
+    <PackageReference Include="Camunda.Orchestration.Sdk" Version="10.*" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.11" />
   </ItemGroup>
 
